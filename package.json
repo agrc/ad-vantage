@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "vitest --run",
     "preview": "vite preview",
     "chrome:dev": "open -na \"Google Chrome Dev\" --args --remote-debugging-port=9223 --user-data-dir=\"$HOME/.ad-vantage-chrome-dev\""
   },
@@ -13,7 +14,9 @@
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.0.268",
     "chrome-webstore-upload-cli": "^3.5.0",
+    "jsdom": "^26.1.0",
     "typescript": "^6.0.2",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "vitest": "^3.2.7"
   }
 }

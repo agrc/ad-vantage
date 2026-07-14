@@ -9,6 +9,10 @@ import {
   loadLookupMap,
   type LookupSearchEntry,
 } from "../shared/csv";
+import {
+  decidePaginationAutomation,
+  type PaginationAutomationCandidate,
+} from "./pagination-automation";
 
 const DESCRIPTION_COL_KEY = "adv-description";
 const DESCRIPTION_COL_LABEL = "Description";
@@ -98,6 +102,7 @@ const warnedMissingTasks = new Set<string>();
 let activeAutocomplete: ActiveAutocompleteState | null = null;
 let updateTimesheetShortcutPositionFrame: number | null = null;
 let recentPaginationClicks = new Map<string, { count: number; time: number }>();
+let lastEligiblePaginationSignatures = new Map<string, string | null>();
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
@@ -464,10 +469,10 @@ function enhanceGrid(grid: HTMLElement) {
   applyFrozenColumns(grid, layoutHeaderRow);
   bindDailyActivityAutocomplete(grid, mainHeaderRow);
   applyTimeWarnings(grid, mainHeaderRow);
-  autoSelectHighestPaginationOption(grid);
+  syncPaginationAutomation(grid);
 }
 
-function autoSelectHighestPaginationOption(grid: HTMLElement) {
+function syncPaginationAutomation(grid: HTMLElement) {
   const buttons = getPaginationButtonsForGrid(grid);
   if (buttons.length === 0) {
     return;
@@ -497,7 +502,35 @@ function autoSelectHighestPaginationOption(grid: HTMLElement) {
   }
 
   const scopeKey = getPaginationScopeKey(grid, buttons);
-  if (hasRecentPaginationClick(scopeKey, highestOption.count)) {
+  const currentOption = options.find(({ button }) =>
+    isPaginationOptionCurrent(button),
+  );
+  const candidate: PaginationAutomationCandidate = {
+    scopeKey,
+    currentCount: currentOption?.count ?? null,
+    highestEligibleCount: highestOption.count,
+    eligibleCounts: options
+      .filter(
+        ({ count, button }) =>
+          count >= MIN_AUTO_PAGINATION_COUNT &&
+          count !== DEFAULT_PAGINATION_COUNT &&
+          !isElementDisabled(button),
+      )
+      .map(({ count }) => count),
+  };
+  const decision = decidePaginationAutomation({
+    candidate,
+    previousEligibleSignature:
+      lastEligiblePaginationSignatures.get(scopeKey) ?? null,
+    recentAction: getRecentPaginationClick(scopeKey),
+    defaultCount: DEFAULT_PAGINATION_COUNT,
+    cooldownMs: PAGINATION_CLICK_COOLDOWN_MS,
+    now: Date.now(),
+  });
+
+  lastEligiblePaginationSignatures.set(scopeKey, decision.eligibleSignature);
+
+  if (!decision.shouldClick) {
     return;
   }
 
@@ -623,15 +656,11 @@ function getPaginationScopeKey(
   return `grid-index:${gridIndex}`;
 }
 
-function hasRecentPaginationClick(scopeKey: string, count: number): boolean {
+function getRecentPaginationClick(
+  scopeKey: string,
+): { count: number; time: number } | undefined {
   pruneRecentPaginationClicks();
-
-  const recentClick = recentPaginationClicks.get(scopeKey);
-  if (!recentClick) {
-    return false;
-  }
-
-  return recentClick.count === count;
+  return recentPaginationClicks.get(scopeKey);
 }
 
 function rememberPaginationClick(scopeKey: string, count: number) {
