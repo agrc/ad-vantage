@@ -6,14 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "test": "vitest --run",
     "preview": "vite preview",
     "chrome:dev": "open -na \"Google Chrome Dev\" --args --remote-debugging-port=9223 --user-data-dir=\"$HOME/.ad-vantage-chrome-dev\""
   },
   "devDependencies": {
+    "@ugrc/eslint-config": "^1.3.0",
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.0.268",
     "chrome-webstore-upload-cli": "^3.5.0",
+    "eslint": "^9.39.4",
     "jsdom": "^26.1.0",
     "typescript": "^6.0.2",
     "vite": "^7.3.2",
