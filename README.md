@@ -26,7 +26,7 @@ Warnings for non-quarter-hour time entries:
 
 ## Installation
 
-Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/ad-vantage/hhilhapkdkgcgbippfodmdldmlnihkgp).
+Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/ad-vantage/cojahhgafebkcbophmfofpihokooonod). Note that this extension is currently only available to State of Utah DTS employees.
 
 The extension icon will appear in your Chrome toolbar. It is only active when you are on the Vantage site.
 
