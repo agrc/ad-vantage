@@ -33,6 +33,7 @@ const HIDDEN_COLSPAN_ATTR = "data-adv-original-colspan";
 const MAX_AUTOCOMPLETE_RESULTS = 8;
 const TIME_ENTRY_DAY_TOTAL_QA_PATTERN = /^DAY_\d+_TIME_TOT$/;
 const TIME_ENTRY_WEEK_TOTAL_QA_PATTERN = /^WEEK_\d+_TOT$/;
+const TIME_ENTRY_SUMMARY_LABELS = new Set(["Total Hours", "Scheduled Hours"]);
 const TIME_ENTRY_WARNING_EXCLUDED_QAS = new Set([
   "PY_PRD_AM",
   "MTHLY_AM",
@@ -1000,7 +1001,7 @@ function isSummaryRow(row: HTMLElement): boolean {
   return Array.from(row.children).some((cell) => {
     if (!(cell instanceof HTMLTableCellElement)) return false;
     const text = cell.textContent?.trim() ?? "";
-    return text === "Total Hours";
+    return TIME_ENTRY_SUMMARY_LABELS.has(text);
   });
 }
 
