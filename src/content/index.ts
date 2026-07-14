@@ -101,8 +101,8 @@ let hasLoggedMissingGrid = false;
 const warnedMissingTasks = new Set<string>();
 let activeAutocomplete: ActiveAutocompleteState | null = null;
 let updateTimesheetShortcutPositionFrame: number | null = null;
-let recentPaginationClicks = new Map<string, { count: number; time: number }>();
-let lastEligiblePaginationSignatures = new Map<string, string | null>();
+const recentPaginationClicks = new Map<string, { count: number; time: number }>();
+const lastEligiblePaginationSignatures = new Map<string, string | null>();
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
@@ -1804,46 +1804,6 @@ function setFormControlValue(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function simplifyDateHeaders(grid: HTMLElement, headerRow: HTMLElement) {
-  const headers = getColumnHeaders(headerRow);
-  headers.forEach((th) => {
-    // Avoid Angular DOM update errors by doing visual simplification via CSS
-    // rather than mutating text nodes directly.
-    const titleEl = th.querySelector(
-      '[data-qa-id$=".headerCellTitle"]',
-    ) as HTMLElement | null;
-    const text = (titleEl ?? th).textContent?.trim() ?? "";
-    const match = text.match(
-      /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+\d{1,2}\/\d{1,2}/i,
-    );
-
-    if (match) {
-      if (titleEl && !titleEl.hasAttribute("data-adv-day")) {
-        titleEl.setAttribute("data-adv-day", match[1]);
-        titleEl.style.fontSize = "0";
-      } else if (!titleEl && !th.hasAttribute("data-adv-day")) {
-        th.setAttribute("data-adv-day", match[1]);
-        th.style.fontSize = "0";
-      }
-    }
-  });
-
-  if (!document.getElementById("adv-day-styles")) {
-    const style = document.createElement("style");
-    style.id = "adv-day-styles";
-    style.textContent = `
-      [data-adv-day]::after {
-        content: attr(data-adv-day);
-        font-size: 13px;
-        letter-spacing: normal;
-        visibility: visible;
-        display: inline-block;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-}
 
 function getColumnHeaders(headerRow: HTMLElement): HTMLElement[] {
   return Array.from(headerRow.querySelectorAll<HTMLElement>("th"));
