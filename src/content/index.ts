@@ -101,7 +101,10 @@ let hasLoggedMissingGrid = false;
 const warnedMissingTasks = new Set<string>();
 let activeAutocomplete: ActiveAutocompleteState | null = null;
 let updateTimesheetShortcutPositionFrame: number | null = null;
-const recentPaginationClicks = new Map<string, { count: number; time: number }>();
+const recentPaginationClicks = new Map<
+  string,
+  { count: number; time: number }
+>();
 const lastEligiblePaginationSignatures = new Map<string, string | null>();
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
