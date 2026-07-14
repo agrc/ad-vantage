@@ -782,16 +782,24 @@ function applyHiddenColumnsToRow(
   headerColumnCount: number,
 ) {
   let currentColumn = 1;
+  let hiddenColumnCursor = 0;
 
   Array.from(row.children).forEach((cell) => {
     if (!(cell instanceof HTMLElement)) return;
     if (isExpandedDetailCell(cell, row, headerColumnCount)) return;
 
     const span = getCellColumnSpan(cell);
-    const hiddenCount = hiddenColumnIndexes.filter(
-      (columnIndex) =>
-        columnIndex >= currentColumn && columnIndex < currentColumn + span,
-    ).length;
+    const nextColumn = currentColumn + span;
+
+    while (hiddenColumnIndexes[hiddenColumnCursor] < currentColumn) {
+      hiddenColumnCursor += 1;
+    }
+
+    const hiddenColumnStart = hiddenColumnCursor;
+    while (hiddenColumnIndexes[hiddenColumnCursor] < nextColumn) {
+      hiddenColumnCursor += 1;
+    }
+    const hiddenCount = hiddenColumnCursor - hiddenColumnStart;
 
     if (hiddenCount === 0) {
       currentColumn += span;
@@ -806,7 +814,7 @@ function applyHiddenColumnsToRow(
       cell.classList.add("adv-hidden");
     }
 
-    currentColumn += span;
+    currentColumn = nextColumn;
   });
 }
 
@@ -1667,9 +1675,7 @@ function applyTimeWarnings(
 ): void {
   if (!isTimeEntryWarningGrid(grid, mainHeaderRow)) {
     grid
-      .querySelectorAll<HTMLElement>(
-        ".adv-time-warn, .adv-missing-event-warn",
-      )
+      .querySelectorAll<HTMLElement>(".adv-time-warn, .adv-missing-event-warn")
       .forEach((cell) =>
         cell.classList.remove("adv-time-warn", "adv-missing-event-warn"),
       );
@@ -1689,14 +1695,14 @@ function applyTimeWarnings(
 
   if (dayColumnIndices.length === 0) return;
 
-  const eventHeader = headers.find((th) => getHeaderLabel(th) === "Event");
+  const eventHeader = headers.find(
+    (th) => getHeaderLabel(th).toLowerCase() === "event",
+  );
   const eventColumnIndex = eventHeader ? getColumnIndex(eventHeader) : null;
 
   // Reset warnings from the previous pass.
   grid
-    .querySelectorAll<HTMLElement>(
-      ".adv-time-warn, .adv-missing-event-warn",
-    )
+    .querySelectorAll<HTMLElement>(".adv-time-warn, .adv-missing-event-warn")
     .forEach((cell) =>
       cell.classList.remove("adv-time-warn", "adv-missing-event-warn"),
     );
