@@ -13,6 +13,7 @@ import {
   decidePaginationAutomation,
   type PaginationAutomationCandidate,
 } from "./pagination-automation";
+import { shouldWarnForMissingEvent } from "./time-entry-validation";
 
 const DESCRIPTION_COL_KEY = "adv-description";
 const DESCRIPTION_COL_LABEL = "Description";
@@ -26,6 +27,7 @@ const UPDATE_TIMESHEET_SHORTCUT_STYLES_ID =
   "adv-update-timesheet-shortcut-styles";
 const AUTOCOMPLETE_BOUND_ATTR = "data-adv-autocomplete-bound";
 const TIME_WARN_BOUND_ATTR = "data-adv-time-warn-bound";
+const EVENT_VALIDATION_BOUND_ATTR = "data-adv-event-validation-bound";
 const UPDATE_TIMESHEET_SHORTCUT_ATTR = "data-adv-update-timesheet-shortcut";
 const HIDDEN_COLSPAN_ATTR = "data-adv-original-colspan";
 const MAX_AUTOCOMPLETE_RESULTS = 8;
@@ -1554,6 +1556,11 @@ function ensureTimeWarnStyles() {
       outline: 6px solid orange;
       outline-offset: -6px;
     }
+
+    td.adv-missing-event-warn {
+      outline: 6px solid red;
+      outline-offset: -6px;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -1606,9 +1613,12 @@ function updateCellTimeWarning(cell: HTMLElement): void {
   }
 }
 
-function scheduleCellTimeWarningUpdate(cell: HTMLElement): void {
+function scheduleTimeEntryWarningUpdate(
+  grid: HTMLElement,
+  mainHeaderRow: HTMLElement,
+): void {
   window.setTimeout(() => {
-    updateCellTimeWarning(cell);
+    applyTimeWarnings(grid, mainHeaderRow);
   }, 0);
 }
 
@@ -1657,8 +1667,12 @@ function applyTimeWarnings(
 ): void {
   if (!isTimeEntryWarningGrid(grid, mainHeaderRow)) {
     grid
-      .querySelectorAll<HTMLElement>(".adv-time-warn")
-      .forEach((cell) => cell.classList.remove("adv-time-warn"));
+      .querySelectorAll<HTMLElement>(
+        ".adv-time-warn, .adv-missing-event-warn",
+      )
+      .forEach((cell) =>
+        cell.classList.remove("adv-time-warn", "adv-missing-event-warn"),
+      );
     return;
   }
 
@@ -1675,10 +1689,17 @@ function applyTimeWarnings(
 
   if (dayColumnIndices.length === 0) return;
 
+  const eventHeader = headers.find((th) => getHeaderLabel(th) === "Event");
+  const eventColumnIndex = eventHeader ? getColumnIndex(eventHeader) : null;
+
   // Reset warnings from the previous pass.
   grid
-    .querySelectorAll<HTMLElement>(".adv-time-warn")
-    .forEach((cell) => cell.classList.remove("adv-time-warn"));
+    .querySelectorAll<HTMLElement>(
+      ".adv-time-warn, .adv-missing-event-warn",
+    )
+    .forEach((cell) =>
+      cell.classList.remove("adv-time-warn", "adv-missing-event-warn"),
+    );
 
   const rows = getPrimaryAndSummaryBodyRows(grid, headerColumnCount);
   rows.forEach((row) => {
@@ -1697,12 +1718,42 @@ function applyTimeWarnings(
       if (input && input.getAttribute(TIME_WARN_BOUND_ATTR) !== "true") {
         input.setAttribute(TIME_WARN_BOUND_ATTR, "true");
         input.addEventListener("blur", () => {
-          scheduleCellTimeWarningUpdate(cell);
+          scheduleTimeEntryWarningUpdate(grid, mainHeaderRow);
         });
       }
 
       updateCellTimeWarning(cell);
     });
+
+    if (eventColumnIndex === null) {
+      return;
+    }
+
+    const eventCell = getRowCell(row, eventColumnIndex);
+    if (!eventCell) {
+      return;
+    }
+
+    const eventInput = eventCell.querySelector<
+      HTMLInputElement | HTMLTextAreaElement
+    >("input, textarea");
+    if (
+      eventInput &&
+      eventInput.getAttribute(EVENT_VALIDATION_BOUND_ATTR) !== "true"
+    ) {
+      eventInput.setAttribute(EVENT_VALIDATION_BOUND_ATTR, "true");
+      eventInput.addEventListener("blur", () => {
+        scheduleTimeEntryWarningUpdate(grid, mainHeaderRow);
+      });
+    }
+
+    const dayValues = dayColumnIndices
+      .map((columnIndex) => getRowCell(row, columnIndex))
+      .filter((cell): cell is HTMLElement => cell !== undefined)
+      .map(getCellDisplayValue);
+    if (shouldWarnForMissingEvent(getCellDisplayValue(eventCell), dayValues)) {
+      eventCell.classList.add("adv-missing-event-warn");
+    }
   });
 }
 
@@ -1832,6 +1883,14 @@ function getColumnKey(th: HTMLElement): string {
   if (dateMatch) return dateMatch[1];
 
   return th.getAttribute("data-qa") ?? text;
+}
+
+function getHeaderLabel(th: HTMLElement): string {
+  const titleEl = th.querySelector(
+    '[data-qa-id$=".headerCellTitle"]',
+  ) as HTMLElement | null;
+
+  return (titleEl ?? th).textContent?.trim() ?? "";
 }
 
 function getColumnIndex(th: HTMLElement): number {
