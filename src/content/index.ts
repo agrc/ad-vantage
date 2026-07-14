@@ -23,6 +23,7 @@ const UPDATE_TIMESHEET_SHORTCUT_STYLES_ID =
 const AUTOCOMPLETE_BOUND_ATTR = "data-adv-autocomplete-bound";
 const TIME_WARN_BOUND_ATTR = "data-adv-time-warn-bound";
 const UPDATE_TIMESHEET_SHORTCUT_ATTR = "data-adv-update-timesheet-shortcut";
+const HIDDEN_COLSPAN_ATTR = "data-adv-original-colspan";
 const MAX_AUTOCOMPLETE_RESULTS = 8;
 const TIME_ENTRY_DAY_TOTAL_QA_PATTERN = /^DAY_\d+_TIME_TOT$/;
 const TIME_ENTRY_WEEK_TOTAL_QA_PATTERN = /^WEEK_\d+_TOT$/;
@@ -704,41 +705,74 @@ function applyColumnVisibility(grid: HTMLElement, headerRow: HTMLElement) {
   const headerColumnCount = headers.length;
   unhideExpandedDetailCells(grid, headerColumnCount);
 
-  headers.forEach((th) => {
+  const hiddenColumnIndexes = headers.reduce<number[]>((indexes, th) => {
     const key = getColumnKey(th);
     if (currentPrefs.hidden.includes(key)) {
-      setColumnHidden(grid, getColumnIndex(th), true, headerColumnCount);
+      indexes.push(getColumnIndex(th));
     }
+
+    return indexes;
+  }, []);
+
+  if (hiddenColumnIndexes.length === 0) return;
+
+  const rows = getRowsForCellMutations(grid, headerColumnCount);
+  rows.forEach((row) => {
+    applyHiddenColumnsToRow(row, hiddenColumnIndexes, headerColumnCount);
   });
 }
 
 function resetHiddenColumns(grid: HTMLElement) {
+  grid
+    .querySelectorAll<HTMLTableCellElement>(`[${HIDDEN_COLSPAN_ATTR}]`)
+    .forEach((cell) => {
+      const originalColSpan = Number.parseInt(
+        cell.getAttribute(HIDDEN_COLSPAN_ATTR) ?? "",
+        10,
+      );
+      if (!Number.isNaN(originalColSpan) && originalColSpan > 0) {
+        cell.colSpan = originalColSpan;
+      }
+      cell.removeAttribute(HIDDEN_COLSPAN_ATTR);
+    });
+
   grid.querySelectorAll<HTMLElement>(".adv-hidden").forEach((cell) => {
     cell.style.removeProperty("display");
     cell.classList.remove("adv-hidden");
   });
 }
 
-function setColumnHidden(
-  grid: HTMLElement,
-  columnIndex: number,
-  hidden: boolean,
+function applyHiddenColumnsToRow(
+  row: HTMLElement,
+  hiddenColumnIndexes: number[],
   headerColumnCount: number,
 ) {
-  const rows = getRowsForCellMutations(grid, headerColumnCount);
+  let currentColumn = 1;
 
-  rows.forEach((row) => {
-    const cell = getRowCell(row, columnIndex);
-    if (!cell) return;
+  Array.from(row.children).forEach((cell) => {
+    if (!(cell instanceof HTMLElement)) return;
     if (isExpandedDetailCell(cell, row, headerColumnCount)) return;
 
-    if (hidden) {
+    const span = getCellColumnSpan(cell);
+    const hiddenCount = hiddenColumnIndexes.filter(
+      (columnIndex) =>
+        columnIndex >= currentColumn && columnIndex < currentColumn + span,
+    ).length;
+
+    if (hiddenCount === 0) {
+      currentColumn += span;
+      return;
+    }
+
+    if (cell instanceof HTMLTableCellElement && hiddenCount < span) {
+      cell.setAttribute(HIDDEN_COLSPAN_ATTR, String(span));
+      cell.colSpan = span - hiddenCount;
+    } else {
       cell.style.display = "none";
       cell.classList.add("adv-hidden");
-    } else {
-      cell.style.removeProperty("display");
-      cell.classList.remove("adv-hidden");
     }
+
+    currentColumn += span;
   });
 }
 
@@ -1812,6 +1846,12 @@ function getColumnIndex(th: HTMLElement): number {
   return Array.from(th.parentElement!.children).indexOf(th) + 1;
 }
 
+function getCellColumnSpan(cell: HTMLElement): number {
+  return cell instanceof HTMLTableCellElement && cell.colSpan > 0
+    ? cell.colSpan
+    : 1;
+}
+
 function getRowCell(
   row: HTMLElement,
   columnIndex: number,
@@ -1825,10 +1865,7 @@ function getRowCell(
   for (const child of Array.from(row.children)) {
     if (!(child instanceof HTMLElement)) continue;
 
-    const span =
-      child instanceof HTMLTableCellElement && child.colSpan > 0
-        ? child.colSpan
-        : 1;
+    const span = getCellColumnSpan(child);
 
     if (columnIndex >= currentColumn && columnIndex < currentColumn + span) {
       return child;
