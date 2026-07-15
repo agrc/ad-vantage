@@ -3,7 +3,7 @@
   "name": "ad-vantage",
   "key": "cojahhgafebkcbophmfofpihokooonod",
   "version": "1.3.4",
-  "description": "Enhances the Vantage timesheet table with frozen columns, hidden columns, and an optional uploaded description lookup column.",
+  "description": "Work faster in Vantage with a clearer timesheet, smarter entry tools, and helpful error checks.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
