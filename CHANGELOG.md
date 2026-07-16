@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/agrc/ad-vantage/compare/v1.3.5...v1.3.6) (2026-07-16)
+
+
+### Bug Fixes
+
+* switch service account to use secret values directly ([160e72d](https://github.com/agrc/ad-vantage/commit/160e72d798a38405a7b1903c7358c2c5f9025ece))
+
 ## [1.3.5](https://github.com/agrc/ad-vantage/compare/v1.3.4...v1.3.5) (2026-07-16)
 
 
