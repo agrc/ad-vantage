@@ -10,12 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+    environment:
+      name: prod
+      url: https://chromewebstore.google.com/detail/ad-vantage/cojahhgafebkcbophmfofpihokooonod
     env:
       RELEASE_VERSION: ${{ github.event.release.tag_name }}
-      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+      EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
+      PUBLISHER_ID: ${{ secrets.PUBLISHER_ID }}
+      GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
 
     steps:
       - name: Check out released commit
@@ -57,7 +61,7 @@ jobs:
         run: |
           missing=0
 
-          for name in CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN CWS_EXTENSION_ID; do
+          for name in EXTENSION_ID PUBLISHER_ID GCP_SERVICE_ACCOUNT_EMAIL GCP_WORKLOAD_IDENTITY_PROVIDER; do
             if [ -z "${!name}" ]; then
               echo "Missing $name; Chrome Web Store publish will be skipped."
               missing=1
@@ -70,10 +74,55 @@ jobs:
             echo "enabled=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Authenticate to Google Cloud
+        if: steps.cws-config.outputs.enabled == 'true'
+        id: google-auth
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT_EMAIL }}
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+
       - name: Publish to Chrome Web Store
         if: steps.cws-config.outputs.enabled == 'true'
         env:
-          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-        run: pnpm exec chrome-webstore-upload --source "$ARCHIVE_NAME" --extension-id "$CWS_EXTENSION_ID"
+          ACCESS_TOKEN: ${{ steps.google-auth.outputs.access_token }}
+        run: |
+          api_base="https://chromewebstore.googleapis.com/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}"
+          auth_header="Authorization: Bearer ${ACCESS_TOKEN}"
+
+          upload_response="$(curl --fail-with-body --silent --show-error \
+            -H "$auth_header" \
+            -X POST -T "$ARCHIVE_NAME" \
+            "https://chromewebstore.googleapis.com/upload/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:upload")"
+          echo "$upload_response" | jq .
+
+          for attempt in {1..12}; do
+            upload_state="$(jq -r '.uploadState // empty' <<< "$upload_response")"
+
+            if [ "$upload_state" = "SUCCESS" ]; then
+              break
+            fi
+
+            if [ "$upload_state" != "UPLOAD_IN_PROGRESS" ]; then
+              echo "Chrome Web Store upload failed with state: ${upload_state:-missing}" >&2
+              exit 1
+            fi
+
+            if [ "$attempt" -eq 12 ]; then
+              echo "Chrome Web Store upload did not finish after 12 status checks." >&2
+              exit 1
+            fi
+
+            sleep 10
+            upload_response="$(curl --fail-with-body --silent --show-error \
+              -H "$auth_header" \
+              "${api_base}:fetchStatus")"
+            echo "$upload_response" | jq .
+          done
+
+          curl --fail-with-body --silent --show-error \
+            -H "$auth_header" \
+            -X POST \
+            "${api_base}:publish" | jq .

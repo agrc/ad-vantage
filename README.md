@@ -122,18 +122,22 @@ The release workflow can publish new versions to the Chrome Web Store after the 
 
 #### Automated Publishing via GitHub Actions
 
+The release workflow uses GitHub Actions OIDC with Google Workload Identity Federation (WIF) to impersonate a Google Cloud service account. It does not use long-lived OAuth refresh tokens or service account key files.
+
 Add these repository secrets to enable automated publishing on release:
 
-- `CWS_CLIENT_ID`
-- `CWS_CLIENT_SECRET`
-- `CWS_REFRESH_TOKEN`
-- `CWS_EXTENSION_ID`
+- `EXTENSION_ID`
+- `PUBLISHER_ID` - Chrome Web Store publisher ID from the Developer Dashboard's Publisher settings.
+- `GCP_WORKLOAD_IDENTITY_PROVIDER` - full WIF provider resource name, in the form `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID`.
+- `GCP_SERVICE_ACCOUNT_EMAIL` - email address of the service account added to the Chrome Web Store publisher.
 
-If any secret is missing, the release workflow still uploads the built zip to GitHub Releases and skips the Chrome Web Store step.
+Before publishing, enable the Chrome Web Store API in the Google Cloud project and add the service account in the Chrome Web Store Developer Dashboard under Account. A publisher can have one service account.
 
-To generate the OAuth credentials, follow [this guide](https://github.com/fregante/chrome-webstore-upload-keys).
+The existing WIF provider and IAM binding must allow this repository's release workflow to impersonate the service account. Restrict that trust condition to tags matching `refs/tags/v*`.
 
-Once configured, each published GitHub release will build the extension, zip `dist`, upload the archive to GitHub Releases, and publish it to the Chrome Web Store.
+If any required secret or variable is missing, the release workflow still uploads the built zip to GitHub Releases and skips the Chrome Web Store step.
+
+Once configured, each published GitHub release builds the extension, uploads the archive to GitHub Releases, uses WIF to obtain a short-lived service-account access token, then uploads and submits the extension to the Chrome Web Store.
 
 ### Releases
 
