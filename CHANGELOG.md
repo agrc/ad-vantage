@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.5](https://github.com/agrc/ad-vantage/compare/v1.3.4...v1.3.5) (2026-07-16)
+
+
+### Bug Fixes
+
+* update deployment pipeline to use state of utah publisher and service account ([40738f5](https://github.com/agrc/ad-vantage/commit/40738f56f5b04e7d5fd4c69245f715f243df2074))
+
+
+### Dependencies
+
+* **dev:** bump @types/chrome ([ef4d097](https://github.com/agrc/ad-vantage/commit/ef4d0977ddb42175e33a33e2e407c1333de7873d))
+
 ## [1.3.4](https://github.com/stdavis/ad-vantage/compare/v1.3.3...v1.3.4) (2026-04-14)
 
 
