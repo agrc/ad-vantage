@@ -106,7 +106,7 @@ jobs:
           for attempt in {1..12}; do
             upload_state="$(jq -r '.uploadState // empty' <<< "$upload_response")"
 
-            if [ "$upload_state" = "SUCCESS" ]; then
+            if [ "$upload_state" = "SUCCEEDED" ]; then
               break
             fi
 
