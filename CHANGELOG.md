@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.10](https://github.com/agrc/ad-vantage/compare/v1.3.9...v1.3.10) (2026-07-20)
+
+
+### Bug Fixes
+
+* fix upload return check ([8b64724](https://github.com/agrc/ad-vantage/commit/8b647245be8411a64df7fd4039d1ce6ac8347e0c))
+
 ## [1.3.9](https://github.com/agrc/ad-vantage/compare/v1.3.8...v1.3.9) (2026-07-20)
 
 
