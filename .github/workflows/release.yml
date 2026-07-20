@@ -96,7 +96,11 @@ jobs:
             -H "$auth_header" \
             -H "Content-Type: application/zip" \
             -X POST -T "$ARCHIVE_NAME" \
-            "https://chromewebstore.googleapis.com/upload/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:upload")"
+            "https://chromewebstore.googleapis.com/upload/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:upload")" || {
+              curl_status=$?
+              echo "$upload_response" | jq . || echo "$upload_response"
+              exit "$curl_status"
+            }
           echo "$upload_response" | jq .
 
           for attempt in {1..12}; do
