@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.9](https://github.com/agrc/ad-vantage/compare/v1.3.8...v1.3.9) (2026-07-20)
+
+
+### Bug Fixes
+
+* remove key from manifest ([c1ce8da](https://github.com/agrc/ad-vantage/commit/c1ce8da4bb055cccf69e67462508dd59d049050c))
+
 ## [1.3.8](https://github.com/agrc/ad-vantage/compare/v1.3.7...v1.3.8) (2026-07-20)
 
 
