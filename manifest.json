@@ -1,7 +1,6 @@
 {
   "manifest_version": 3,
   "name": "ad-vantage",
-  "key": "cojahhgafebkcbophmfofpihokooonod",
   "version": "1.3.8",
   "description": "Work faster in Vantage with a clearer timesheet, smarter entry tools, and helpful error checks.",
   "icons": {
@@ -9,9 +8,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [
-    "storage"
-  ],
+  "permissions": ["storage"],
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
@@ -27,9 +24,7 @@
         "https://vantage.utah.gov/*",
         "https://vantage.access.utah.gov/*"
       ],
-      "js": [
-        "src/content/index.ts"
-      ]
+      "js": ["src/content/index.ts"]
     }
   ]
 }
