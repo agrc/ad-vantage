@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.7](https://github.com/agrc/ad-vantage/compare/v1.3.6...v1.3.7) (2026-07-20)
+
+
+### Bug Fixes
+
+* fix content type in deploy requests ([edba513](https://github.com/agrc/ad-vantage/commit/edba513a4e2e970f839a16ec585f32a5abe95c23))
+
 ## [1.3.6](https://github.com/agrc/ad-vantage/compare/v1.3.5...v1.3.6) (2026-07-16)
 
 
