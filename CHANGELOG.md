@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.8](https://github.com/agrc/ad-vantage/compare/v1.3.7...v1.3.8) (2026-07-20)
+
+
+### Bug Fixes
+
+* add better logging to deploy script ([13959e4](https://github.com/agrc/ad-vantage/commit/13959e4e69f8c093811a3c568abf2d18786fef33))
+
 ## [1.3.7](https://github.com/agrc/ad-vantage/compare/v1.3.6...v1.3.7) (2026-07-20)
 
 
