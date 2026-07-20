@@ -94,6 +94,7 @@ jobs:
 
           upload_response="$(curl --fail-with-body --silent --show-error \
             -H "$auth_header" \
+            -H "Content-Type: application/zip" \
             -X POST -T "$ARCHIVE_NAME" \
             "https://chromewebstore.googleapis.com/upload/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:upload")"
           echo "$upload_response" | jq .
@@ -124,5 +125,7 @@ jobs:
 
           curl --fail-with-body --silent --show-error \
             -H "$auth_header" \
+            -H "Content-Type: application/json" \
             -X POST \
+            -d '{}' \
             "${api_base}:publish" | jq .
