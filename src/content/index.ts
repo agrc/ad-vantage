@@ -13,6 +13,11 @@ import {
   decidePaginationAutomation,
   type PaginationAutomationCandidate,
 } from "./pagination-automation";
+import {
+  applyColumnWidth,
+  getCellColumnSpan,
+  getRowCell,
+} from "./grid-alignment";
 import { shouldWarnForMissingEvent } from "./time-entry-validation";
 
 const DESCRIPTION_COL_KEY = "adv-description";
@@ -461,14 +466,27 @@ function enhanceGrid(grid: HTMLElement) {
 
   const headerRows = getHeaderRows(grid);
   const mainHeaderRow = getMainHeaderRow(grid);
-  const layoutHeaderRow = headerRows[0];
+  const stickyHeaderRow = getStickyHeaderRow(grid);
 
-  if (!layoutHeaderRow || !mainHeaderRow) return;
+  if (!mainHeaderRow) return;
 
   prepareGridForFrozenColumns(grid);
   syncDescriptionColumns(grid, headerRows, mainHeaderRow);
-  applyColumnVisibility(grid, layoutHeaderRow);
-  applyFrozenColumns(grid, layoutHeaderRow);
+  if (stickyHeaderRow) {
+    syncDescriptionHeaderCell(stickyHeaderRow);
+  }
+  if (mainHeaderRow.querySelector(`th[data-qa="${DAILY_ACTIVITY_QA}"]`)) {
+    clearLegacyBodyColumnWidths(grid, mainHeaderRow);
+    syncStickyHeaderColumnWidths(mainHeaderRow, stickyHeaderRow);
+  }
+  applyColumnVisibility(grid, mainHeaderRow);
+  if (stickyHeaderRow) {
+    applyColumnVisibility(stickyHeaderRow.closest("table")!, stickyHeaderRow);
+  }
+  applyFrozenColumns(grid, mainHeaderRow);
+  if (stickyHeaderRow) {
+    applyFrozenColumns(stickyHeaderRow.closest("table")!, stickyHeaderRow);
+  }
   bindDailyActivityAutocomplete(grid, mainHeaderRow);
   applyTimeWarnings(grid, mainHeaderRow);
   syncPaginationAutomation(grid);
@@ -837,7 +855,7 @@ function applyFrozenColumns(grid: HTMLElement, headerRow: HTMLElement) {
     if (!currentPrefs.frozen.includes(key)) return;
 
     const colIndex = getColumnIndex(th);
-    const width = th.offsetWidth;
+    const width = th.getBoundingClientRect().width;
     const left = accumulatedWidth;
 
     setColumnFrozen(grid, colIndex, left, headerColumnCount);
@@ -932,8 +950,22 @@ function syncDescriptionHeaderCell(
   }
 
   descTh.style.cssText =
-    "padding: 4px 8px; white-space: nowrap; font-weight: bold;";
-  descTh.textContent = DESCRIPTION_COL_LABEL;
+    "padding: 1px; white-space: nowrap; font-weight: bold; vertical-align: middle;";
+  descTh.replaceChildren();
+
+  const titleWrapper = document.createElement("div");
+  titleWrapper.setAttribute("role", "presentation");
+  titleWrapper.style.cssText =
+    "display: flex; align-items: center; box-sizing: border-box; height: 44px; padding: 15px 20px;";
+
+  const title = document.createElement("span");
+  title.setAttribute("role", "presentation");
+  title.setAttribute("data-qa", "headerCellTitle");
+  title.style.display = "block";
+  title.textContent = DESCRIPTION_COL_LABEL;
+
+  titleWrapper.appendChild(title);
+  descTh.appendChild(titleWrapper);
 
   const nextHeader = dailyActivityTh.nextElementSibling;
   if (nextHeader !== descTh) {
@@ -982,11 +1014,51 @@ function updateDescriptionCells(
     }
 
     descCell.textContent = description;
-    descCell.style.cssText = "padding: 4px 8px;";
+    descCell.style.cssText = "padding: 0.3571rem 1.4286rem;";
     descCell.classList.add("adv-description");
 
     const nextCell = row.children[descriptionColumnIndex - 1] ?? null;
     row.insertBefore(descCell, nextCell);
+  });
+}
+
+function clearLegacyBodyColumnWidths(
+  grid: HTMLElement,
+  headerRow: HTMLElement,
+) {
+  const headers = getColumnHeaders(headerRow);
+  const headerColumnCount = headers.length;
+  const rows = getPrimaryAndSummaryBodyRows(grid, headerColumnCount);
+
+  rows.forEach((row) => {
+    headers.forEach((_, index) => {
+      const cell = getRowCell(row, index + 1);
+      if (
+        cell?.style.minWidth === "0px" &&
+        cell.style.maxWidth.endsWith("px")
+      ) {
+        cell.style.removeProperty("width");
+        cell.style.removeProperty("min-width");
+        cell.style.removeProperty("max-width");
+      }
+    });
+  });
+}
+
+function syncStickyHeaderColumnWidths(
+  sourceHeaderRow: HTMLElement,
+  stickyHeaderRow: HTMLElement | null,
+) {
+  if (!stickyHeaderRow) return;
+
+  const sourceHeaders = getColumnHeaders(sourceHeaderRow);
+  const stickyHeaders = getColumnHeaders(stickyHeaderRow);
+
+  sourceHeaders.forEach((sourceHeader, index) => {
+    const stickyHeader = stickyHeaders[index];
+    if (!stickyHeader) return;
+
+    applyColumnWidth(stickyHeader, sourceHeader.getBoundingClientRect().width);
   });
 }
 
@@ -1878,6 +1950,22 @@ function getMainHeaderRow(grid: HTMLElement): HTMLElement | null {
   );
 }
 
+function getStickyHeaderRow(grid: HTMLElement): HTMLElement | null {
+  if (!(grid instanceof HTMLTableElement)) {
+    return null;
+  }
+
+  const stickyHeader = grid.parentElement?.previousElementSibling;
+  if (
+    !(stickyHeader instanceof HTMLElement) ||
+    stickyHeader.getAttribute("data-qa") !== "stickyTableGrid"
+  ) {
+    return null;
+  }
+
+  return stickyHeader.querySelector<HTMLElement>("table thead tr");
+}
+
 function getEnhanceableGrids(): HTMLElement[] {
   const candidates = Array.from(
     document.querySelectorAll<HTMLElement>(
@@ -1887,6 +1975,10 @@ function getEnhanceableGrids(): HTMLElement[] {
   const grids: HTMLElement[] = [];
 
   candidates.forEach((candidate) => {
+    if (candidate.closest('[data-qa="stickyTableGrid"]')) {
+      return;
+    }
+
     if (!isEnhanceableGrid(candidate) || !getMainHeaderRow(candidate)) {
       return;
     }
@@ -1925,37 +2017,6 @@ function getHeaderLabel(th: HTMLElement): string {
 
 function getColumnIndex(th: HTMLElement): number {
   return Array.from(th.parentElement!.children).indexOf(th) + 1;
-}
-
-function getCellColumnSpan(cell: HTMLElement): number {
-  return cell instanceof HTMLTableCellElement && cell.colSpan > 0
-    ? cell.colSpan
-    : 1;
-}
-
-function getRowCell(
-  row: HTMLElement,
-  columnIndex: number,
-): HTMLElement | undefined {
-  if (columnIndex < 1) {
-    return undefined;
-  }
-
-  let currentColumn = 1;
-
-  for (const child of Array.from(row.children)) {
-    if (!(child instanceof HTMLElement)) continue;
-
-    const span = getCellColumnSpan(child);
-
-    if (columnIndex >= currentColumn && columnIndex < currentColumn + span) {
-      return child;
-    }
-
-    currentColumn += span;
-  }
-
-  return undefined;
 }
 
 // ─── MutationObserver ────────────────────────────────────────────────────────
