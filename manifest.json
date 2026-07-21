@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ad-vantage",
-  "version": "1.3.10",
+  "version": "1.3.11",
   "description": "Work faster in Vantage with a clearer timesheet, smarter entry tools, and helpful error checks.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7ocfTnTYKZHUn6XCVbbuJQxmclbX3tuTm1YEicgJUxhJ5MLB8lRkc2YOhW17/z2NR4UONhYRtKPtRZbJ9yvNrOgTJzXzGneNUPt/HORUa2adBMswf70zJH6ixy10IfcT1/Hc+oSK3JL0ErIgmPm/9NuwiUsOYTcyW1+kTBl6De4+9KJZf8qXwxknWQwolWDP5778iDnv7IDjsFc4MCrrwZ7xk1h0Z53LhXWez4TGKNBvAsHgatr0lYM1RH7pyiRk3UXGpPB8skhKvVaZyj7SrIRAkseZ6ejWJE3ENGrohPip8gk9G0T5/yd/+2/jjcxHRtGe0xgb5/a2nhMn09mouwIDAQAB",
   "icons": {
@@ -9,8 +9,13 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["identity", "storage"],
-  "host_permissions": ["https://utahdev.servicenowservices.com/*"],
+  "permissions": [
+    "identity",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://utahdev.servicenowservices.com/*"
+  ],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
@@ -30,7 +35,9 @@
         "https://vantage.utah.gov/*",
         "https://vantage.access.utah.gov/*"
       ],
-      "js": ["src/content/index.ts"]
+      "js": [
+        "src/content/index.ts"
+      ]
     }
   ]
 }
