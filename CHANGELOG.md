@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.11](https://github.com/agrc/ad-vantage/compare/v1.3.10...v1.3.11) (2026-07-21)
+
+
+### Features
+
+* replace CSV upload with fetch directly from ServiceNow ([23f1b36](https://github.com/agrc/ad-vantage/commit/23f1b365ad99af4d45aa7c9f602b01ed7cdcb184)), closes [#24](https://github.com/agrc/ad-vantage/issues/24)
+
+
+### Bug Fixes
+
+* refine grid header widths and alignments ([b532cae](https://github.com/agrc/ad-vantage/commit/b532caeaa8ac4a8cc1e1033a97b8dc00f4ba2951))
+
 ## [1.3.10](https://github.com/agrc/ad-vantage/compare/v1.3.9...v1.3.10) (2026-07-20)
 
 
