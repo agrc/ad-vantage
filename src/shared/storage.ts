@@ -12,9 +12,14 @@ export interface LookupSearchEntryRecord {
 export interface LookupDataRecord {
   entries: Array<[string, string]>;
   searchEntries?: LookupSearchEntryRecord[];
-  fileName: string;
   entryCount: number;
   uploadedAt: string;
+}
+
+export interface AuthTokenRecord {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
 interface StoredColumnPrefs extends ColumnPrefs {
@@ -27,6 +32,7 @@ const LEGACY_DAILY_ACTIVITY_QA = "DACT_CD";
 const PREFS_KEY = "columnPrefs";
 const PREFS_SCHEMA_VERSION = 3;
 const LOOKUP_DATA_KEY = "lookupData";
+const AUTH_TOKEN_KEY = "serviceNowAuth";
 
 const DEFAULT_COLUMN_PREFS: ColumnPrefs = {
   hidden: [],
@@ -159,12 +165,6 @@ export async function setLookupData(data: LookupDataRecord): Promise<void> {
   });
 }
 
-export async function clearLookupData(): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.local.remove(LOOKUP_DATA_KEY, resolve);
-  });
-}
-
 export function onLookupDataChanged(
   callback: (lookupData: LookupDataRecord | null) => void,
 ): void {
@@ -175,5 +175,33 @@ export function onLookupDataChanged(
         | undefined;
       callback(nextLookupData ?? null);
     }
+  });
+}
+
+export async function getAuthToken(): Promise<AuthTokenRecord | null> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(AUTH_TOKEN_KEY, (result) => {
+      const token = result[AUTH_TOKEN_KEY] as AuthTokenRecord | undefined;
+      resolve(
+        token &&
+          typeof token.accessToken === "string" &&
+          typeof token.refreshToken === "string" &&
+          typeof token.expiresAt === "number"
+          ? token
+          : null,
+      );
+    });
+  });
+}
+
+export async function setAuthToken(token: AuthTokenRecord): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [AUTH_TOKEN_KEY]: token }, resolve);
+  });
+}
+
+export async function clearAuthToken(): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove(AUTH_TOKEN_KEY, resolve);
   });
 }

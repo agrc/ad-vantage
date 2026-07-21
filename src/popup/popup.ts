@@ -1,13 +1,10 @@
 import {
-  clearLookupData,
   getColumnPrefs,
   getLookupData,
-  setLookupData,
   setColumnPrefs,
   type ColumnPrefs,
   type LookupDataRecord,
 } from "../shared/storage";
-import { parseCsvData, serializeLookupMap } from "../shared/csv";
 
 interface ColumnInfo {
   key: string;
@@ -18,6 +15,7 @@ const DESCRIPTION_COL_KEY = "adv-description";
 const DESCRIPTION_COL_LABEL = "Description";
 const DAILY_ACTIVITY_QA = "DLY_ACTV_CD";
 const GET_COLUMNS_MESSAGE_TYPE = "adv:get-columns";
+const SERVICE_NOW_SYNC = "adv:servicenow-sync";
 
 let prefs: ColumnPrefs = {
   hidden: [],
@@ -27,9 +25,9 @@ let columns: ColumnInfo[] = [];
 let lookupData: LookupDataRecord | null = null;
 
 function renderHeaderIcon() {
-  const iconElement = document.getElementById("header-icon") as
-    | HTMLImageElement
-    | null;
+  const iconElement = document.getElementById(
+    "header-icon",
+  ) as HTMLImageElement | null;
   if (!iconElement) return;
 
   iconElement.src = chrome.runtime.getURL("icons/icon48.png");
@@ -58,62 +56,20 @@ async function init() {
 
   const emptyState = document.getElementById("empty-state")!;
   const columnList = document.getElementById("column-list")!;
-  const lookupFileInput = document.getElementById(
-    "lookup-file",
-  ) as HTMLInputElement;
-  const uploadButton = document.getElementById(
-    "upload-btn",
-  ) as HTMLButtonElement;
-  const clearLookupButton = document.getElementById(
-    "clear-lookup-btn",
-  ) as HTMLButtonElement;
+  const syncButton = document.getElementById("sync-btn") as HTMLButtonElement;
 
   renderLookupSummary();
 
-  lookupFileInput.addEventListener("change", () => {
-    uploadButton.disabled = !lookupFileInput.files?.length;
-    setLookupStatus("");
-  });
-
-  uploadButton.addEventListener("click", async () => {
-    const file = lookupFileInput.files?.[0];
-    if (!file) {
-      setLookupStatus("Choose a CSV file to upload.", "error");
-      return;
-    }
-
-    const text = await file.text();
-    const parsedLookup = parseCsvData(text);
-
-    if (parsedLookup.lookupMap.size === 0) {
-      setLookupStatus(
-        "The CSV did not contain any valid Task# or Vantage lookup rows.",
-        "error",
-      );
-      return;
-    }
-
-    lookupData = serializeLookupMap(
-      parsedLookup.lookupMap,
-      file.name,
-      parsedLookup.searchEntries,
+  syncButton.addEventListener("click", async () => {
+    const succeeded = await runServiceNowAction(
+      syncButton,
+      "Fetching...",
+      SERVICE_NOW_SYNC,
     );
-    await setLookupData(lookupData);
-    renderLookupSummary();
-    setLookupStatus(
-      `Uploaded ${lookupData.entryCount} Daily Activity suggestions.`,
-    );
-    lookupFileInput.value = "";
-    uploadButton.disabled = true;
-  });
-
-  clearLookupButton.addEventListener("click", async () => {
-    await clearLookupData();
-    lookupData = null;
-    lookupFileInput.value = "";
-    uploadButton.disabled = true;
-    renderLookupSummary();
-    setLookupStatus("Cleared uploaded lookup data.");
+    if (succeeded) {
+      lookupData = await getLookupData();
+      renderLookupSummary();
+    }
   });
 
   if (columns.length === 0) {
@@ -135,33 +91,69 @@ async function init() {
   });
 }
 
+async function sendServiceNowMessage<T = { ok: boolean; error?: string }>(
+  type: string,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type }, (response: T | undefined) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve(response as T);
+    });
+  });
+}
+
+async function runServiceNowAction(
+  button: HTMLButtonElement,
+  busyLabel: string,
+  type: string,
+): Promise<boolean> {
+  button.disabled = true;
+  const originalLabel = button.textContent ?? "Action";
+  button.textContent = busyLabel;
+  try {
+    const response = await sendServiceNowMessage<{
+      ok: boolean;
+      error?: string;
+    }>(type);
+    if (!response?.ok) throw new Error(response?.error ?? "Request failed.");
+    return true;
+  } catch (error) {
+    renderLookupError(
+      error instanceof Error ? error.message : "ServiceNow request failed.",
+    );
+    return false;
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
 function renderLookupSummary() {
   const summary = document.getElementById("lookup-summary")!;
-  const clearLookupButton = document.getElementById(
-    "clear-lookup-btn",
-  ) as HTMLButtonElement;
+  summary.removeAttribute("data-state");
 
   if (!lookupData) {
     summary.textContent =
-      "No CSV uploaded. The Description column and Daily Activity autocomplete will stay blank.";
-    clearLookupButton.disabled = true;
+      "No ServiceNow tasks synced. The Description column and Daily Activity autocomplete will stay blank.";
     return;
   }
 
   const uploadedAt = new Date(lookupData.uploadedAt).toLocaleString();
-  summary.textContent = `${lookupData.fileName} loaded with ${lookupData.entryCount} task suggestions. Updated ${uploadedAt}.`;
-  clearLookupButton.disabled = false;
+  const count = document.createElement("span");
+  count.textContent = `Total tasks loaded: ${lookupData.entryCount.toLocaleString()}`;
+  const updated = document.createElement("span");
+  updated.textContent = `Updated: ${uploadedAt}`;
+  summary.replaceChildren(count, updated);
 }
 
-function setLookupStatus(message: string, state: "info" | "error" = "info") {
-  const status = document.getElementById("lookup-status")!;
-  status.textContent = message;
-  if (message.length === 0) {
-    status.removeAttribute("data-state");
-    return;
-  }
-
-  status.setAttribute("data-state", state);
+function renderLookupError(message: string) {
+  const summary = document.getElementById("lookup-summary")!;
+  summary.textContent = message;
+  summary.setAttribute("data-state", "error");
 }
 
 function renderColumnList(container: HTMLElement) {

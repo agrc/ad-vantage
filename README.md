@@ -6,8 +6,8 @@ A Chrome extension that makes the [Vantage timesheet app](https://vantage.utah.g
 
 - **Frozen columns** — Keep key columns like employee name and project code pinned while you scroll horizontally through date columns.
 - **Hidden columns** — Declutter your view by hiding columns you don't need.
-- **Description lookup column** — Add an optional column that displays task descriptions pulled from a CSV file you upload.
-- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your uploaded lookup data.
+- **Description lookup column** — Add an optional column that displays task descriptions fetched from ServiceNow.
+- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your synced task data.
 - **Update Timesheet shortcut** — On `Timesheet (TIMEI)` in the `Daily Activity` tab, adds an `Update Timesheet` button next to the lower three-dot menu so you can trigger the native action in one click.
 - **Automatic pagination upgrade** — On grids that expose larger page sizes, the extension automatically selects the highest available visible option only when the grid is in a verified fallback state at the default 20 rows, including after adding a new row when the grid resets.
 - **Quarter-hour warnings** — Time cells that don't end in `:00`, `:15`, `:30`, or `:45` are highlighted with an orange outline, helping you catch accidental decimal-style entries.
@@ -36,17 +36,31 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 2. The extension activates automatically — columns are frozen and your saved visibility preferences are applied.
 3. **Click the extension icon** in your Chrome toolbar to open the popup, where you can:
    - Show or hide individual columns.
-   - Upload or replace the description lookup CSV.
+   - Fetch the current task descriptions from ServiceNow.
 4. On `Timesheet (TIMEI)` with the `Daily Activity` grid visible, use the added `Update Timesheet` button beside the lower three-dot menu to run the same native update action without opening the menu first.
 5. When a grid shows inline pagination options such as `50` or `100`, the extension automatically switches to the highest enabled option only after it detects a verified fallback to `20`, and it will not repeat that native click just because the page emitted more generic mutation noise.
 
-### Description Lookup CSV
+### ServiceNow Task Sync
 
-Uploading a CSV file enables the Description column and Daily Activity autocomplete.
+The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Utah ServiceNow instance. The extension is a public OAuth client and does not contain or store a client secret.
 
-- The CSV must include a `Task#` (or `Task #`) column and either a `Task Name` or `Vantage` column.
-- Your uploaded data is stored locally in `chrome.storage.local` — it stays in your current Chrome profile and is never synced to other devices.
-- To disable description lookups, clear the uploaded file from the popup.
+- OAuth base URL: `https://utahdev.servicenowservices.com/`
+- Table: `pm_project_task`
+- Task code: `number`
+- Description: `short_description`
+- OAuth redirect URL: `https://cojahhgafebkcbophmfofpihokooonod.chromiumapp.org/`
+
+The task request uses this `sysparm_query` filter:
+
+```text
+active=true^assigned_to=javascript:gs.getUserID()^ORassignment_group=javascript:getMyGroups()^ORadditional_assignee_listLIKEjavascript:gs.getUserID()
+```
+
+This limits the lookup to active tasks assigned directly to the signed-in user, assigned to one of the user's groups, or listing the user as an additional assignee. The request retrieves only the `number` and `short_description` fields needed for the Description column and Daily Activity autocomplete.
+
+The ServiceNow OAuth Application Registry entry must be configured as a public/external client with the Authorization Code grant and PKCE enabled. The user must have permission to read `pm_project_task` records.
+
+Fetched lookup data and OAuth tokens are stored in the current Chrome profile's isolated `chrome.storage.local` area. They are not synced to other devices. Tokens are refreshed automatically and cleared internally if ServiceNow rejects a refresh token.
 
 ---
 

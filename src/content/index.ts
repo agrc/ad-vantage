@@ -8,7 +8,7 @@ import {
   loadLookupEntries,
   loadLookupMap,
   type LookupSearchEntry,
-} from "../shared/csv";
+} from "../shared/lookup";
 import {
   decidePaginationAutomation,
   type PaginationAutomationCandidate,
@@ -193,9 +193,7 @@ function applyEnhancements() {
     syncUpdateTimesheetShortcut();
     closeAutocompleteIfStale();
 
-    const grids = Array.from(
-      document.querySelectorAll<HTMLElement>('div[role="grid"]'),
-    ).filter(isEnhanceableGrid);
+    const grids = getEnhanceableGrids();
 
     if (grids.length === 0) {
       if (!hasLoggedMissingGrid) {
@@ -254,18 +252,16 @@ function getPageActionsMenuTrigger(): HTMLButtonElement | null {
 }
 
 function hasDailyActivityGridContext(): boolean {
-  return Array.from(document.querySelectorAll<HTMLElement>('div[role="grid"]'))
-    .filter(isEnhanceableGrid)
-    .some((grid) => {
-      const mainHeaderRow = getMainHeaderRow(grid);
-      if (!mainHeaderRow) {
-        return false;
-      }
+  return getEnhanceableGrids().some((grid) => {
+    const mainHeaderRow = getMainHeaderRow(grid);
+    if (!mainHeaderRow) {
+      return false;
+    }
 
-      return getColumnHeaders(mainHeaderRow).some(
-        (header) => header.getAttribute("data-qa") === DAILY_ACTIVITY_QA,
-      );
-    });
+    return getColumnHeaders(mainHeaderRow).some(
+      (header) => header.getAttribute("data-qa") === DAILY_ACTIVITY_QA,
+    );
+  });
 }
 
 function getUpdateTimesheetShortcutContainer(
@@ -692,10 +688,7 @@ function isEnhanceableGrid(grid: HTMLElement): boolean {
 }
 
 function getColumnsForPopup(): ColumnInfo[] {
-  const mainHeaderRow = Array.from(
-    document.querySelectorAll<HTMLElement>('div[role="grid"]'),
-  )
-    .filter(isEnhanceableGrid)
+  const mainHeaderRow = getEnhanceableGrids()
     .map((grid) => getMainHeaderRow(grid))
     .find((headerRow): headerRow is HTMLElement => Boolean(headerRow));
 
@@ -1875,7 +1868,37 @@ function getHeaderRows(grid: HTMLElement): HTMLElement[] {
 }
 
 function getMainHeaderRow(grid: HTMLElement): HTMLElement | null {
-  return grid.querySelector<HTMLElement>('table[data-qa="tableGrid"] thead tr');
+  if (grid.matches("table")) {
+    return grid.querySelector<HTMLElement>("thead tr");
+  }
+
+  return (
+    grid.querySelector<HTMLElement>('table[data-qa="tableGrid"] thead tr') ??
+    grid.querySelector<HTMLElement>("table thead tr")
+  );
+}
+
+function getEnhanceableGrids(): HTMLElement[] {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'div[role="grid"], table[data-qa="tableGrid"], table',
+    ),
+  );
+  const grids: HTMLElement[] = [];
+
+  candidates.forEach((candidate) => {
+    if (!isEnhanceableGrid(candidate) || !getMainHeaderRow(candidate)) {
+      return;
+    }
+
+    const containingGrid = candidate.closest<HTMLElement>('div[role="grid"]');
+    const grid = containingGrid ?? candidate;
+    if (!grids.includes(grid)) {
+      grids.push(grid);
+    }
+  });
+
+  return grids;
 }
 
 function getColumnKey(th: HTMLElement): string {

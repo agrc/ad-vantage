@@ -2,10 +2,18 @@
   "cSpell.words": [
     "agrc",
     "cooldown",
+    "Enhanceable",
     "esbuild",
+    "PKCE",
+    "Prefs",
     "TIMEI",
     "Timesheet",
     "ugrc",
     "webstore"
-  ]
+  ],
+  "chat.tools.terminal.autoApprove": {
+    "./node_modules/.bin/vite": true,
+    "./node_modules/.bin/vitest": true,
+    "./node_modules/.bin/eslint": true
+  }
 }

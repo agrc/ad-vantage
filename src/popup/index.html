@@ -27,29 +27,20 @@
         <div class="section-heading">
           <h2 id="lookup-heading">Description Lookup</h2>
           <p class="section-copy">
-            Upload an optional CSV to populate the Description column and power
-            Daily Activity autocomplete.
+            Fetch task descriptions from ServiceNow to populate the Description
+            column and Daily Activity autocomplete.
           </p>
         </div>
 
-        <label class="file-label" for="lookup-file">CSV file</label>
-        <input id="lookup-file" type="file" accept=".csv,text/csv" />
-        <p class="lookup-requirements" id="lookup-requirements">
-          Required columns: <strong>Task#</strong> or <strong>Task #</strong>,
-          plus <strong>Task Name</strong> or <strong>Vantage</strong>.
-        </p>
-
         <div class="lookup-actions">
-          <button id="upload-btn" class="btn-primary" type="button" disabled>
-            Upload CSV
-          </button>
-          <button id="clear-lookup-btn" class="btn-secondary" type="button">
-            Clear CSV
+          <button id="sync-btn" class="btn-primary" type="button">
+            Fetch from ServiceNow
           </button>
         </div>
 
-        <p id="lookup-summary" class="lookup-summary">No CSV uploaded.</p>
-        <p id="lookup-status" class="lookup-status" aria-live="polite"></p>
+        <div id="lookup-summary" class="lookup-summary" aria-live="polite">
+          No ServiceNow tasks synced.
+        </div>
       </section>
 
       <section id="column-list-section">
