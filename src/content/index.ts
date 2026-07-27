@@ -18,6 +18,10 @@ import {
   getCellColumnSpan,
   getRowCell,
 } from "./grid-alignment";
+import {
+  hasVisibleEnabledEditableTimesheetAction,
+  EDITABLE_TIMESHEET_ACTION_SELECTOR,
+} from "./page-actions";
 import { shouldWarnForMissingEvent } from "./time-entry-validation";
 
 const DESCRIPTION_COL_KEY = "adv-description";
@@ -53,7 +57,7 @@ const PAGE_ACTIONS_MENU_TRIGGER_SELECTOR =
 const DAILY_ACTIVITY_PAGE_ACTIONS_MENU_TRIGGER_SELECTOR =
   'button[data-qa-id$="rs10TIMEI_DOC_DACTview.viewMenu.pageLevelThreedotMenu"]';
 const UPDATE_TIMESHEET_REFERENCE_BUTTON_SELECTOR =
-  'button[data-qa$=".viewActions.saveAndClose"], button[data-qa$=".viewActions.save"]';
+  EDITABLE_TIMESHEET_ACTION_SELECTOR;
 const UPDATE_TIMESHEET_MENU_ITEM_SELECTOR = [
   'button[role="menuitem"][data-qa$=".additionalActionsMenu.LoadTimesheet"]',
   'button[role="menuitem"][data-qa-id$=".additionalActionsMenu.LoadTimesheet"]',
@@ -230,7 +234,11 @@ function syncUpdateTimesheetShortcut() {
 
   const menuTrigger = getPageActionsMenuTrigger();
 
-  if (!menuTrigger || !hasDailyActivityGridContext()) {
+  if (
+    !menuTrigger ||
+    !hasDailyActivityGridContext() ||
+    !hasVisibleEnabledEditableTimesheetAction(document, isVisible)
+  ) {
     removeUpdateTimesheetShortcuts();
     return;
   }
