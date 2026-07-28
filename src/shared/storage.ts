@@ -180,7 +180,7 @@ export function onLookupDataChanged(
 
 export async function getAuthToken(): Promise<AuthTokenRecord | null> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(AUTH_TOKEN_KEY, (result) => {
+    chrome.storage.session.get(AUTH_TOKEN_KEY, (result) => {
       const token = result[AUTH_TOKEN_KEY] as AuthTokenRecord | undefined;
       resolve(
         token &&
@@ -196,12 +196,12 @@ export async function getAuthToken(): Promise<AuthTokenRecord | null> {
 
 export async function setAuthToken(token: AuthTokenRecord): Promise<void> {
   return new Promise((resolve) => {
-    chrome.storage.local.set({ [AUTH_TOKEN_KEY]: token }, resolve);
+    chrome.storage.session.set({ [AUTH_TOKEN_KEY]: token }, resolve);
   });
 }
 
 export async function clearAuthToken(): Promise<void> {
   return new Promise((resolve) => {
-    chrome.storage.local.remove(AUTH_TOKEN_KEY, resolve);
+    chrome.storage.session.remove(AUTH_TOKEN_KEY, resolve);
   });
 }

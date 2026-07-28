@@ -109,6 +109,8 @@ The ServiceNow OAuth Application Registry entry must be configured as a public/e
 
 Fetched lookup data and OAuth tokens are stored in the current Chrome profile's isolated `chrome.storage.local` area. They are not synced to other devices. Tokens are refreshed automatically and cleared internally if ServiceNow rejects a refresh token.
 
+Test local queries using the [REST API Explorer](https://dev.workspaces.dts.utah.gov/now/nav/ui/classic/params/target/%24restapi.do) in the dev instance.
+
 ### Tests
 
 ```bash
