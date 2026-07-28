@@ -1,3 +1,4 @@
+import { signOut } from "../background/oauth";
 import {
   getColumnPrefs,
   getLookupData,
@@ -86,7 +87,13 @@ async function init() {
       hidden: [],
       frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
     };
-    await setColumnPrefs(prefs);
+    await signOut();
+    await Promise.all([
+      new Promise<void>((resolve) => chrome.storage.local.clear(resolve)),
+      new Promise<void>((resolve) => chrome.storage.sync.clear(resolve)),
+    ]);
+    lookupData = null;
+    renderLookupSummary();
     renderColumnList(columnList);
   });
 }
