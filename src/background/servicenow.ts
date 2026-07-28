@@ -3,9 +3,15 @@ import type { LookupDataRecord } from "../shared/storage";
 import { SERVICE_NOW_BASE_URL, getValidAccessToken } from "./oauth";
 
 const TABLE_PATH = "/api/now/table/pm_project_task";
-// Query for active tasks assigned to me, my groups, or as an additional assignee.
+// Query for active tasks assigned to me, my groups, or as an additional assignee that have a planned end date in the future
+// Ryan said that he doesn't think that additional_assignee is used but I'm keeping here in case it's used in the future
 const TASK_QUERY =
-  "active=true^assigned_to=javascript:gs.getUserID()^ORassignment_group=javascript:getMyGroups()^ORadditional_assignee_listLIKEjavascript:gs.getUserID()";
+  "active=true" +
+  "^end_date>=javascript:gs.beginningOfToday()" +
+  "^assigned_to=javascript:gs.getUserID()" +
+  "^ORassignment_group=javascript:getMyGroups()" +
+  "^ORadditional_assignee_listLIKEjavascript:gs.getUserID()";
+
 const PAGE_SIZE = 500;
 const MAX_RECORDS = 10_000;
 

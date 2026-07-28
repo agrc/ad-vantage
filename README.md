@@ -20,7 +20,7 @@ Type-ahead search for tasks based on description:
 
 <p align="center"><img src="screenshot.png" alt="grid screenshot" /></p>
 
-Warnings for non-quarter-hour time entries:
+Warnings for non-quarter-hour time entries or blank values in the Event column:
 
 <p align="center"><img src="warnings.png" alt="warnings screenshot" /></p>
 
@@ -42,25 +42,7 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 
 ### ServiceNow Task Sync
 
-The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Utah ServiceNow instance. The extension is a public OAuth client and does not contain or store a client secret.
-
-- OAuth base URL: `https://utahdev.servicenowservices.com/`
-- Table: `pm_project_task`
-- Task code: `number`
-- Description: `short_description`
-- OAuth redirect URL: `https://cojahhgafebkcbophmfofpihokooonod.chromiumapp.org/`
-
-The task request uses this `sysparm_query` filter:
-
-```text
-active=true^assigned_to=javascript:gs.getUserID()^ORassignment_group=javascript:getMyGroups()^ORadditional_assignee_listLIKEjavascript:gs.getUserID()
-```
-
-This limits the lookup to active tasks assigned directly to the signed-in user, assigned to one of the user's groups, or listing the user as an additional assignee. The request retrieves only the `number` and `short_description` fields needed for the Description column and Daily Activity autocomplete.
-
-The ServiceNow OAuth Application Registry entry must be configured as a public/external client with the Authorization Code grant and PKCE enabled. The user must have permission to read `pm_project_task` records.
-
-Fetched lookup data and OAuth tokens are stored in the current Chrome profile's isolated `chrome.storage.local` area. They are not synced to other devices. Tokens are refreshed automatically and cleared internally if ServiceNow rejects a refresh token.
+Use **Fetch from ServiceNow** in the popup to sign in and load current task descriptions. The extension uses that information to populate the Description column and provide suggestions while entering Daily Activity codes. Your task data stays associated with your current browser profile.
 
 ---
 
@@ -116,6 +98,16 @@ pnpm build
 ```
 
 Bundles and minifies the extension into the `dist` folder. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
+
+### ServiceNow Integration
+
+The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Utah ServiceNow instance. The extension is a public OAuth client and does not contain or store a client secret.
+
+The task request uses the `sysparm_query` filter defined in [src/background/servicenow.ts](src/background/servicenow.ts).
+
+The ServiceNow OAuth Application Registry entry must be configured as a public/external client with the Authorization Code grant and PKCE enabled. The user must have permission to read `pm_project_task` records.
+
+Fetched lookup data and OAuth tokens are stored in the current Chrome profile's isolated `chrome.storage.local` area. They are not synced to other devices. Tokens are refreshed automatically and cleared internally if ServiceNow rejects a refresh token.
 
 ### Tests
 
