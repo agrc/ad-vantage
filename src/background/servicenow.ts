@@ -1,5 +1,5 @@
 import { serializeLookupData } from "../shared/lookup";
-import type { LookupDataRecord } from "../shared/storage";
+import { clearAuthToken, type LookupDataRecord } from "../shared/storage";
 import { SERVICE_NOW_BASE_URL, getValidAccessToken } from "./oauth";
 
 const TABLE_PATH = "/api/now/table/pm_project_task";
@@ -58,7 +58,10 @@ export function mapTaskRecords(records: ServiceNowTask[]): LookupDataRecord {
   );
 }
 
-async function fetchPage(offset: number): Promise<ServiceNowTask[]> {
+async function fetchPage(
+  offset: number,
+  retryUnauthorized = true,
+): Promise<ServiceNowTask[]> {
   const token = await getValidAccessToken();
   const url = new URL(`${SERVICE_NOW_BASE_URL}${TABLE_PATH}`);
   url.search = new URLSearchParams({
@@ -72,6 +75,10 @@ async function fetchPage(offset: number): Promise<ServiceNowTask[]> {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
   if (response.status === 401) {
+    if (retryUnauthorized) {
+      await clearAuthToken();
+      return fetchPage(offset, false);
+    }
     throw new Error("ServiceNow session expired. Fetch again to sign in.");
   }
   if (!response.ok) {
