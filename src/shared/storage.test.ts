@@ -4,6 +4,7 @@ import {
   getAuthToken,
   getColumnPrefs,
   getLookupData,
+  resetExtensionData,
   setAuthToken,
   setColumnPrefs,
   setLookupData,
@@ -38,8 +39,10 @@ const sync = {
   set: vi.fn(),
   remove: vi.fn(),
 };
+const runtime: { lastError?: { message: string } } = {};
 
 vi.stubGlobal("chrome", {
+  runtime,
   storage: {
     local,
     session,
@@ -50,6 +53,7 @@ vi.stubGlobal("chrome", {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  runtime.lastError = undefined;
 });
 
 describe("storage areas", () => {
@@ -120,6 +124,61 @@ describe("storage areas", () => {
     expect(sync.get).toHaveBeenCalledWith("columnPrefs", expect.any(Function));
     expect(sync.set).toHaveBeenCalledWith(
       { columnPrefs: { ...prefs, schemaVersion: 3 } },
+      expect.any(Function),
+    );
+  });
+});
+
+describe("storage errors", () => {
+  it("rejects read failures", async () => {
+    sync.get.mockImplementation((_key, callback) => {
+      runtime.lastError = { message: "sync unavailable" };
+      callback({});
+      runtime.lastError = undefined;
+    });
+
+    await expect(getColumnPrefs()).rejects.toThrow("sync unavailable");
+  });
+
+  it("rejects write failures", async () => {
+    local.set.mockImplementation((_values, callback) => {
+      runtime.lastError = { message: "quota exceeded" };
+      callback();
+      runtime.lastError = undefined;
+    });
+
+    await expect(setLookupData(lookupData)).rejects.toThrow("quota exceeded");
+  });
+
+  it("rejects remove failures", async () => {
+    session.remove.mockImplementation((_key, callback) => {
+      runtime.lastError = { message: "session unavailable" };
+      callback();
+      runtime.lastError = undefined;
+    });
+
+    await expect(clearAuthToken()).rejects.toThrow("session unavailable");
+  });
+});
+
+describe("resetExtensionData", () => {
+  it("removes only extension-owned records from their storage areas", async () => {
+    sync.remove.mockImplementation((_key, callback) => callback());
+    local.remove.mockImplementation((_key, callback) => callback());
+    session.remove.mockImplementation((_key, callback) => callback());
+
+    await resetExtensionData();
+
+    expect(sync.remove).toHaveBeenCalledWith(
+      "columnPrefs",
+      expect.any(Function),
+    );
+    expect(local.remove).toHaveBeenCalledWith(
+      "lookupData",
+      expect.any(Function),
+    );
+    expect(session.remove).toHaveBeenCalledWith(
+      "serviceNowAuth",
       expect.any(Function),
     );
   });

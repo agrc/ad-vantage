@@ -1,7 +1,7 @@
-import { signOut } from "../background/oauth";
 import {
   getColumnPrefs,
   getLookupData,
+  resetExtensionData,
   setColumnPrefs,
   type ColumnPrefs,
   type LookupDataRecord,
@@ -58,6 +58,7 @@ async function init() {
   const emptyState = document.getElementById("empty-state")!;
   const columnList = document.getElementById("column-list")!;
   const syncButton = document.getElementById("sync-btn") as HTMLButtonElement;
+  const resetButton = document.getElementById("reset-btn") as HTMLButtonElement;
 
   renderLookupSummary();
 
@@ -82,19 +83,24 @@ async function init() {
     renderColumnList(columnList);
   }
 
-  document.getElementById("reset-btn")!.addEventListener("click", async () => {
-    prefs = {
-      hidden: [],
-      frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
-    };
-    await signOut();
-    await Promise.all([
-      new Promise<void>((resolve) => chrome.storage.local.clear(resolve)),
-      new Promise<void>((resolve) => chrome.storage.sync.clear(resolve)),
-    ]);
-    lookupData = null;
-    renderLookupSummary();
-    renderColumnList(columnList);
+  resetButton.addEventListener("click", async () => {
+    resetButton.disabled = true;
+    try {
+      await resetExtensionData();
+      prefs = {
+        hidden: [],
+        frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+      };
+      lookupData = null;
+      renderLookupSummary();
+      renderColumnList(columnList);
+    } catch (error) {
+      renderLookupError(
+        error instanceof Error ? error.message : "Settings reset failed.",
+      );
+    } finally {
+      resetButton.disabled = false;
+    }
   });
 }
 
@@ -233,8 +239,8 @@ function createColumnRow(options: {
   controls.className = "column-controls";
 
   controls.append(
-    createVisibilityControl({ key, checked: isVisible }),
-    createFreezeControl({ key, checked: isFrozen }),
+    createVisibilityControl({ key, label, checked: isVisible }),
+    createFreezeControl({ key, label, checked: isFrozen }),
   );
 
   row.append(labelSpan, controls);
@@ -243,6 +249,7 @@ function createColumnRow(options: {
 
 function createVisibilityControl(options: {
   key: string;
+  label: string;
   checked: boolean;
 }): HTMLDivElement {
   const group = document.createElement("div");
@@ -259,6 +266,7 @@ function createVisibilityControl(options: {
   input.dataset.key = options.key;
   input.dataset.type = "visible";
   input.checked = options.checked;
+  input.setAttribute("aria-label", `Show ${options.label} column`);
 
   const track = document.createElement("span");
   track.className = "toggle-track";
@@ -271,6 +279,7 @@ function createVisibilityControl(options: {
 
 function createFreezeControl(options: {
   key: string;
+  label: string;
   checked: boolean;
 }): HTMLDivElement {
   const group = document.createElement("div");
@@ -285,6 +294,7 @@ function createFreezeControl(options: {
   input.dataset.key = options.key;
   input.dataset.type = "freeze";
   input.checked = options.checked;
+  input.setAttribute("aria-label", `Freeze ${options.label} column`);
 
   group.append(groupLabel, input);
 
@@ -329,4 +339,8 @@ function ensureDescriptionColumn(columns: ColumnInfo[]): ColumnInfo[] {
   ];
 }
 
-init();
+void init().catch((error: unknown) => {
+  renderLookupError(
+    error instanceof Error ? error.message : "Popup initialization failed.",
+  );
+});

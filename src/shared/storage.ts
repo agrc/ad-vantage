@@ -71,16 +71,18 @@ function normalizeColumnPrefs(
   return { hidden, frozen };
 }
 
-function normalizeColumnKeys(keys: string[]): string[] {
+function normalizeColumnKeys(keys: unknown[]): string[] {
   return [
     ...new Set(
-      keys.map((key) => {
-        if (key === LEGACY_DAILY_ACTIVITY_QA) {
-          return DAILY_ACTIVITY_QA;
-        }
+      keys
+        .filter((key): key is string => typeof key === "string")
+        .map((key) => {
+          if (key === LEGACY_DAILY_ACTIVITY_QA) {
+            return DAILY_ACTIVITY_QA;
+          }
 
-        return key;
-      }),
+          return key;
+        }),
     ),
   ];
 }
@@ -99,35 +101,34 @@ function shouldMigrateLegacyPrefs(
 }
 
 export async function getColumnPrefs(): Promise<ColumnPrefs> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(PREFS_KEY, (result) => {
-      const storedPrefs = result[PREFS_KEY] as StoredColumnPrefs | undefined;
-      const normalizedPrefs = normalizeColumnPrefs(
-        storedPrefs ?? getDefaultColumnPrefs(),
-        {
-          migrateLegacyDescriptionVisibility:
-            shouldMigrateLegacyPrefs(storedPrefs),
-        },
-      );
+  const storedPrefs = await getStorageValue<StoredColumnPrefs>(
+    chrome.storage.sync,
+    PREFS_KEY,
+  );
+  const normalizedPrefs = normalizeColumnPrefs(
+    storedPrefs ?? getDefaultColumnPrefs(),
+    {
+      migrateLegacyDescriptionVisibility: shouldMigrateLegacyPrefs(storedPrefs),
+    },
+  );
 
-      if (shouldMigrateLegacyPrefs(storedPrefs)) {
-        chrome.storage.sync.set({
-          [PREFS_KEY]: serializeColumnPrefs(normalizedPrefs),
-        });
-      }
+  if (shouldMigrateLegacyPrefs(storedPrefs)) {
+    await setStorageValue(
+      chrome.storage.sync,
+      PREFS_KEY,
+      serializeColumnPrefs(normalizedPrefs),
+    );
+  }
 
-      resolve(normalizedPrefs);
-    });
-  });
+  return normalizedPrefs;
 }
 
 export async function setColumnPrefs(prefs: ColumnPrefs): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.set(
-      { [PREFS_KEY]: serializeColumnPrefs(prefs) },
-      resolve,
-    );
-  });
+  await setStorageValue(
+    chrome.storage.sync,
+    PREFS_KEY,
+    serializeColumnPrefs(prefs),
+  );
 }
 
 export function onColumnPrefsChanged(
@@ -149,20 +150,15 @@ export function onColumnPrefsChanged(
 }
 
 export async function getLookupData(): Promise<LookupDataRecord | null> {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(LOOKUP_DATA_KEY, (result) => {
-      const lookupData = result[LOOKUP_DATA_KEY] as
-        | LookupDataRecord
-        | undefined;
-      resolve(lookupData ?? null);
-    });
-  });
+  const lookupData = await getStorageValue<unknown>(
+    chrome.storage.local,
+    LOOKUP_DATA_KEY,
+  );
+  return isLookupDataRecord(lookupData) ? cloneLookupData(lookupData) : null;
 }
 
 export async function setLookupData(data: LookupDataRecord): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ [LOOKUP_DATA_KEY]: data }, resolve);
-  });
+  await setStorageValue(chrome.storage.local, LOOKUP_DATA_KEY, data);
 }
 
 export function onLookupDataChanged(
@@ -179,29 +175,125 @@ export function onLookupDataChanged(
 }
 
 export async function getAuthToken(): Promise<AuthTokenRecord | null> {
-  return new Promise((resolve) => {
-    chrome.storage.session.get(AUTH_TOKEN_KEY, (result) => {
-      const token = result[AUTH_TOKEN_KEY] as AuthTokenRecord | undefined;
-      resolve(
-        token &&
-          typeof token.accessToken === "string" &&
-          typeof token.refreshToken === "string" &&
-          typeof token.expiresAt === "number"
-          ? token
-          : null,
-      );
+  const token = await getStorageValue<unknown>(
+    chrome.storage.session,
+    AUTH_TOKEN_KEY,
+  );
+  return isAuthTokenRecord(token) ? { ...token } : null;
+}
+
+export async function setAuthToken(token: AuthTokenRecord): Promise<void> {
+  await setStorageValue(chrome.storage.session, AUTH_TOKEN_KEY, token);
+}
+
+export async function clearAuthToken(): Promise<void> {
+  await removeStorageValue(chrome.storage.session, AUTH_TOKEN_KEY);
+}
+
+export async function resetExtensionData(): Promise<void> {
+  await Promise.all([
+    removeStorageValue(chrome.storage.sync, PREFS_KEY),
+    removeStorageValue(chrome.storage.local, LOOKUP_DATA_KEY),
+    removeStorageValue(chrome.storage.session, AUTH_TOKEN_KEY),
+  ]);
+}
+
+function getStorageValue<T>(
+  storageArea: chrome.storage.StorageArea,
+  key: string,
+): Promise<T | undefined> {
+  return new Promise((resolve, reject) => {
+    storageArea.get(key, (result) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve(result[key] as T | undefined);
     });
   });
 }
 
-export async function setAuthToken(token: AuthTokenRecord): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.session.set({ [AUTH_TOKEN_KEY]: token }, resolve);
+function setStorageValue(
+  storageArea: chrome.storage.StorageArea,
+  key: string,
+  value: unknown,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    storageArea.set({ [key]: value }, () => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve();
+    });
   });
 }
 
-export async function clearAuthToken(): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.session.remove(AUTH_TOKEN_KEY, resolve);
+function removeStorageValue(
+  storageArea: chrome.storage.StorageArea,
+  key: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    storageArea.remove(key, () => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve();
+    });
   });
+}
+
+function isAuthTokenRecord(value: unknown): value is AuthTokenRecord {
+  if (!value || typeof value !== "object") return false;
+
+  const token = value as Partial<AuthTokenRecord>;
+  return (
+    typeof token.accessToken === "string" &&
+    typeof token.refreshToken === "string" &&
+    typeof token.expiresAt === "number" &&
+    Number.isFinite(token.expiresAt)
+  );
+}
+
+function isLookupDataRecord(value: unknown): value is LookupDataRecord {
+  if (!value || typeof value !== "object") return false;
+
+  const record = value as Partial<LookupDataRecord>;
+  return (
+    Array.isArray(record.entries) &&
+    record.entries.every(
+      (entry) =>
+        Array.isArray(entry) &&
+        entry.length === 2 &&
+        typeof entry[0] === "string" &&
+        typeof entry[1] === "string",
+    ) &&
+    (record.searchEntries === undefined ||
+      (Array.isArray(record.searchEntries) &&
+        record.searchEntries.every(
+          (entry) =>
+            Boolean(entry) &&
+            typeof entry.taskCode === "string" &&
+            typeof entry.description === "string" &&
+            typeof entry.searchText === "string",
+        ))) &&
+    typeof record.entryCount === "number" &&
+    Number.isFinite(record.entryCount) &&
+    typeof record.uploadedAt === "string"
+  );
+}
+
+function cloneLookupData(data: LookupDataRecord): LookupDataRecord {
+  return {
+    ...data,
+    entries: data.entries.map(([taskCode, description]) => [
+      taskCode,
+      description,
+    ]),
+    searchEntries: data.searchEntries?.map((entry) => ({ ...entry })),
+  };
 }
