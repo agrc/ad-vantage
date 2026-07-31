@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.12](https://github.com/agrc/ad-vantage/compare/v1.3.11...v1.3.12) (2026-07-31)
+
+
+### Bug Fixes
+
+* clear auth and service now data on reset settings ([845c849](https://github.com/agrc/ad-vantage/commit/845c8498e272702d654560d29b0a128e3c7d085c))
+* only query for tasks with an end date that has not passed ([9d8b968](https://github.com/agrc/ad-vantage/commit/9d8b968eb9b5e4dbec4c413938f7427c8091c9ab))
+* prevent "Update Timesheet" button from incorrectly showing on read-only timesheet views ([ceb2f64](https://github.com/agrc/ad-vantage/commit/ceb2f64a4273ea008a5f8640b9df59d7981f9b91)), refs [#17](https://github.com/agrc/ad-vantage/issues/17)
+* switch from local to session storage for auth tokens ([77da96e](https://github.com/agrc/ad-vantage/commit/77da96ea0511b8db990d6ad1d5041cbe6acfdba7))
+* update service now query to get tasks with end dates within the past two weeks ([46bc36f](https://github.com/agrc/ad-vantage/commit/46bc36f62c0de1dc3037909e1c366adfcb4841a8))
+
 ## [1.3.11](https://github.com/agrc/ad-vantage/compare/v1.3.10...v1.3.11) (2026-07-21)
 
 
