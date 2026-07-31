@@ -25,15 +25,28 @@ describe("getEligiblePaginationSignature", () => {
   it("returns a stable signature for verified fallback states", () => {
     expect(
       getEligiblePaginationSignature(createCandidate(), defaultCount),
-    ).toBe(
-      "daily-activity-grid|current:20|target:100|eligible:50,100",
-    );
+    ).toBe("daily-activity-grid|current:20|target:100|eligible:50,100");
   });
 
   it("returns null when the grid is not on the default fallback count", () => {
     expect(
       getEligiblePaginationSignature(
         createCandidate({ currentCount: 50, highestEligibleCount: 100 }),
+        defaultCount,
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null when current or eligible counts are unavailable", () => {
+    expect(
+      getEligiblePaginationSignature(
+        createCandidate({ currentCount: null }),
+        defaultCount,
+      ),
+    ).toBeNull();
+    expect(
+      getEligiblePaginationSignature(
+        createCandidate({ highestEligibleCount: null, eligibleCounts: [] }),
         defaultCount,
       ),
     ).toBeNull();
@@ -77,7 +90,10 @@ describe("decidePaginationAutomation", () => {
   it("does not click when the current page size is not the verified fallback", () => {
     expect(
       decidePaginationAutomation({
-        candidate: createCandidate({ currentCount: 50, highestEligibleCount: 100 }),
+        candidate: createCandidate({
+          currentCount: 50,
+          highestEligibleCount: 100,
+        }),
         previousEligibleSignature: null,
         defaultCount,
         cooldownMs,
@@ -95,7 +111,10 @@ describe("decidePaginationAutomation", () => {
       now,
     });
     const resetState = decidePaginationAutomation({
-      candidate: createCandidate({ currentCount: 100, highestEligibleCount: 100 }),
+      candidate: createCandidate({
+        currentCount: 100,
+        highestEligibleCount: 100,
+      }),
       previousEligibleSignature: initial.eligibleSignature,
       defaultCount,
       cooldownMs,
@@ -118,7 +137,8 @@ describe("decidePaginationAutomation", () => {
     expect(
       decidePaginationAutomation({
         candidate: createCandidate({ eligibleCounts: [100] }),
-        previousEligibleSignature: "daily-activity-grid|current:20|target:50|eligible:50",
+        previousEligibleSignature:
+          "daily-activity-grid|current:20|target:50|eligible:50",
         recentAction: { count: 100, time: now - 200 },
         defaultCount,
         cooldownMs,

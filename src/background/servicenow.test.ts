@@ -84,4 +84,18 @@ describe("fetchTaskLookup", () => {
     expect(getValidAccessToken).toHaveBeenCalledTimes(2);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+
+  it("reports non-OK and malformed responses", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(null, { status: 503 }),
+    );
+    await expect(fetchTaskLookup()).rejects.toThrow(
+      "ServiceNow task fetch failed (503).",
+    );
+
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ result: {} }));
+    await expect(fetchTaskLookup()).rejects.toThrow(
+      "ServiceNow returned an invalid task response.",
+    );
+  });
 });

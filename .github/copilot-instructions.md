@@ -25,6 +25,21 @@ Use [docs/vantage-timesheet-grid-reference.html](docs/vantage-timesheet-grid-ref
 
 - This file is intentionally simplified. It keeps the important table shape and representative control types while omitting framework noise, duplicate hidden headers, CSS classes, and telemetry attributes.
 
+## Content Module Ownership
+
+Keep `src/content/index.ts` focused on loading state and orchestrating feature modules. Put feature behavior in the module that owns it:
+
+- `grid-dom.ts`: grid discovery, headers, column keys, and weekday normalization.
+- `grid-alignment.ts`: logical cell lookup across colspans and width application.
+- `column-layout.ts`: visibility, frozen columns, summary rows, and expanded-detail exclusions.
+- `description-column.ts`: synthetic Description headers/cells and sticky-header widths.
+- `autocomplete.ts` and `autocomplete-dom.ts`: suggestion ranking and autocomplete interaction lifecycle.
+- `page-actions.ts`: Update Timesheet shortcut lifecycle.
+- `pagination.ts`: pagination automation.
+- `time-warnings.ts` and `time-entry-validation.ts`: warning DOM behavior and pure validation decisions.
+
+Pass current preferences and lookup data into feature modules rather than duplicating storage listeners or module-level state. Preserve summary-row colspans, sticky-header behavior, modal exclusions, and the immediate-plus-animation-frame mutation pass unless live profiling supports a timing change.
+
 ## README Maintenance
 
 When implementing a new user-visible feature, behavior change, workflow change, or setup change, update [README.md](README.md) in the same task unless the user explicitly says not to.
@@ -35,23 +50,28 @@ When implementing a new user-visible feature, behavior change, workflow change, 
 
 ## Post-Work Verification
 
-After finishing code changes, run the project's validation commands before reporting completion.
+After finishing code changes, run the project's non-watch validation commands before reporting completion.
 
+- Run focused tests immediately after changing a feature module.
 - Run `pnpm test`.
+- Run `pnpm coverage` when changing behavior or tests.
 - Run `pnpm lint`.
 - Run `pnpm check`.
-- If any command fails, resolve the issue and rerun the affected command(s) until they pass.
+- Run `pnpm build` for changes that affect extension runtime code or configuration.
+- Run `git diff --check`.
+- If any command fails, resolve the issue and rerun the affected command until it passes.
 
 ## Working with the Vantage DOM (Angular)
 
-The Vantage timesheet application is built on Angular. Its DOM contains invisible structural elements (like Angular component hooks and directive comment nodes) that the framework relies on for its internal view model.
+The Vantage timesheet application is built on Angular. Its DOM contains invisible structural elements, such as Angular component hooks and directive comment nodes, that the framework relies on for its internal view model.
 
-- **DO NOT** use `element.textContent = ...` or `element.innerHTML = ...` to modify text inside Vantage elements (especially grid headers). Doing so destroys Angular's structural nodes, which will crash the app (e.g., `TypeError: Cannot read properties of undefined (reading 'update')`) when Angular later tries to run a change detection cycle.
-- **DO** use a `document.createTreeWalker()` targeting `NodeFilter.SHOW_TEXT` to walk the DOM and find text nodes specifically. You can safely assign strings directly to `node.nodeValue` without interfering with sibling structural tags.
+- **DO NOT** use `element.textContent = ...` or `element.innerHTML = ...` to modify text inside Vantage-owned elements, especially grid headers. Doing so destroys Angular's structural nodes and can crash the app during change detection.
+- **DO** use a `document.createTreeWalker()` targeting `NodeFilter.SHOW_TEXT` to find and update text nodes without interfering with sibling structural nodes.
+- Extension-owned elements may use normal DOM construction and `textContent`; build page-derived content with DOM APIs rather than HTML strings.
 
 ## Handling Dynamic Date Columns
 
-Vantage headers encompass 14-day pay periods and display dynamic dates periodically (e.g., "Sat 03/14").
+Vantage headers encompass 14-day pay periods and display dynamic dates periodically, for example `Sat 03/14`.
 
-- **Normalization**: User preferences for hidden/frozen columns should tie to the day of the week, not the specific date, so that they persist into the next pay period.
-- **Deduplication**: When scanning headers to populate the popup UI menu, normalize "Sat 03/14" down to "Sat" using the `normalizeColumnString` regex utility (`src/shared/utils.ts`). Failing to do this results in 14 distinct duplicate settings inputs inside the extension's popup. Always map and deduplicate column items prior to rendering the settings UI.
+- Normalize date headers to weekday keys through `getColumnKey()` in `src/content/grid-dom.ts` so hidden and frozen preferences persist across pay periods.
+- Deduplicate normalized keys when building popup column metadata so a pay period does not produce duplicate weekday controls.

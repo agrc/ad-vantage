@@ -14,6 +14,9 @@ describe("hasEnteredTimeValue", () => {
     ["01:00", true],
     ["00:15", true],
     ["1.5", true],
+    ["\t 0:00 \n", false],
+    [" 1:5 ", true],
+    ["00:15:00", true],
   ])("treats %j as entered time: %s", (value, expected) => {
     expect(hasEnteredTimeValue(value)).toBe(expected);
   });
@@ -21,9 +24,7 @@ describe("hasEnteredTimeValue", () => {
 
 describe("shouldWarnForMissingEvent", () => {
   it("warns when an empty Event has entered time", () => {
-    expect(shouldWarnForMissingEvent("", ["", "01:00", "-"])).toBe(
-      true,
-    );
+    expect(shouldWarnForMissingEvent("", ["", "01:00", "-"])).toBe(true);
   });
 
   it("does not warn when the Event is populated", () => {
@@ -31,8 +32,6 @@ describe("shouldWarnForMissingEvent", () => {
   });
 
   it("does not warn for empty Event on an unused row", () => {
-    expect(shouldWarnForMissingEvent("", ["", "00:00", "-"])).toBe(
-      false,
-    );
+    expect(shouldWarnForMissingEvent("", ["", "00:00", "-"])).toBe(false);
   });
 });

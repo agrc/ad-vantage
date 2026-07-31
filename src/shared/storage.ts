@@ -1,3 +1,9 @@
+import {
+  DAILY_ACTIVITY_QA,
+  DESCRIPTION_COL_KEY,
+  LEGACY_DAILY_ACTIVITY_QA,
+} from "./constants";
+
 export interface ColumnPrefs {
   hidden: string[];
   frozen: string[];
@@ -26,9 +32,6 @@ interface StoredColumnPrefs extends ColumnPrefs {
   schemaVersion?: number;
 }
 
-const DESCRIPTION_COL_KEY = "adv-description";
-const DAILY_ACTIVITY_QA = "DLY_ACTV_CD";
-const LEGACY_DAILY_ACTIVITY_QA = "DACT_CD";
 const PREFS_KEY = "columnPrefs";
 const PREFS_SCHEMA_VERSION = 3;
 const LOOKUP_DATA_KEY = "lookupData";
