@@ -10,9 +10,19 @@ export const SERVICE_NOW_CLIENT_ID = "8982c05b2d9e418ba33f64dcd6a983d5";
 const TOKEN_PATH = "/oauth_token.do";
 const REFRESH_WINDOW_MS = 60_000;
 
+let authenticationPromise: Promise<string> | null = null;
 let refreshPromise: Promise<string> | null = null;
 
-export async function authenticate(): Promise<string> {
+export function authenticate(): Promise<string> {
+  if (!authenticationPromise) {
+    authenticationPromise = performAuthentication().finally(() => {
+      authenticationPromise = null;
+    });
+  }
+  return authenticationPromise;
+}
+
+async function performAuthentication(): Promise<string> {
   const verifier = createCodeVerifier();
   const challenge = await createCodeChallenge(verifier);
   const state = createCodeVerifier();
@@ -75,6 +85,10 @@ export async function getValidAccessToken(): Promise<string> {
 }
 
 export async function signOut(): Promise<void> {
+  const pendingTokenRequest = authenticationPromise ?? refreshPromise;
+  if (pendingTokenRequest) {
+    await pendingTokenRequest.catch(() => undefined);
+  }
   await clearAuthToken();
 }
 
@@ -130,13 +144,23 @@ async function exchangeToken(
     throw new Error("ServiceNow returned an invalid token response.");
   }
 
-  const expiresIn =
-    typeof payload.expires_in === "number" ? payload.expires_in : 1800;
+  const expiresIn = normalizeExpiresIn(payload.expires_in);
   return {
     accessToken: payload.access_token,
     refreshToken: payload.refresh_token,
     expiresAt: Date.now() + expiresIn * 1000,
   };
+}
+
+function normalizeExpiresIn(value: unknown): number {
+  const parsedValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 1800;
 }
 
 function launchWebAuthFlow(

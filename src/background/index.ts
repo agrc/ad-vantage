@@ -1,31 +1,28 @@
+import {
+  isServiceNowSyncRequest,
+  type ServiceNowSyncResponse,
+} from "../shared/messages";
 import { setLookupData } from "../shared/storage";
 import { fetchTaskLookup } from "./servicenow";
 
-const SYNC = "adv:servicenow-sync";
-
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (!message?.type) return;
+  if (!isServiceNowSyncRequest(message)) return;
 
-  void handleMessage(message.type)
+  void handleServiceNowSync()
     .then(sendResponse)
     .catch((error: unknown) => {
-      sendResponse({
+      const response: ServiceNowSyncResponse = {
         ok: false,
         error:
           error instanceof Error ? error.message : "ServiceNow request failed.",
-      });
+      };
+      sendResponse(response);
     });
   return true;
 });
 
-async function handleMessage(type: string) {
-  switch (type) {
-    case SYNC: {
-      const lookupData = await fetchTaskLookup();
-      await setLookupData(lookupData);
-      return { ok: true, entryCount: lookupData.entryCount };
-    }
-    default:
-      return undefined;
-  }
+async function handleServiceNowSync(): Promise<ServiceNowSyncResponse> {
+  const lookupData = await fetchTaskLookup();
+  await setLookupData(lookupData);
+  return { ok: true, entryCount: lookupData.entryCount };
 }

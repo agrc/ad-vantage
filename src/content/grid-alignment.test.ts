@@ -8,6 +8,13 @@ function createRow(markup: string): HTMLTableRowElement {
 }
 
 describe("getRowCell", () => {
+  it("returns undefined for non-positive and missing logical columns", () => {
+    const row = createRow("<td>only</td>");
+
+    expect(getRowCell(row, 0)).toBeUndefined();
+    expect(getRowCell(row, 2)).toBeUndefined();
+  });
+
   it("looks up logical columns across hidden leading cells", () => {
     const row = createRow(
       '<td style="display:none">select</td><td style="display:none">line</td><td data-key="activity">activity</td><td data-key="event">event</td>',
@@ -25,6 +32,17 @@ describe("getRowCell", () => {
 
     expect(getRowCell(row, 1)?.getAttribute("data-key")).toBe("summary");
     expect(getRowCell(row, 2)?.getAttribute("data-key")).toBe("summary");
+    expect(getRowCell(row, 3)?.getAttribute("data-key")).toBe("date");
+  });
+
+  it("uses a dynamically updated colspan", () => {
+    const row = createRow(
+      '<td data-key="summary">summary</td><td data-key="date">date</td>',
+    );
+    const summary = row.querySelector<HTMLTableCellElement>("td")!;
+    summary.colSpan = 2;
+
+    expect(getRowCell(row, 2)).toBe(summary);
     expect(getRowCell(row, 3)?.getAttribute("data-key")).toBe("date");
   });
 });

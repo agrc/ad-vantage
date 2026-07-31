@@ -1,4 +1,16 @@
 import {
+  DAILY_ACTIVITY_QA,
+  DESCRIPTION_COL_KEY,
+  DESCRIPTION_COL_LABEL,
+} from "../shared/constants";
+import {
+  GET_COLUMNS_MESSAGE_TYPE,
+  isGetColumnsResponse,
+  SERVICE_NOW_SYNC_MESSAGE_TYPE,
+  type ColumnInfo,
+  type ServiceNowSyncResponse,
+} from "../shared/messages";
+import {
   getColumnPrefs,
   getLookupData,
   resetExtensionData,
@@ -6,17 +18,11 @@ import {
   type ColumnPrefs,
   type LookupDataRecord,
 } from "../shared/storage";
-
-interface ColumnInfo {
-  key: string;
-  label: string;
-}
-
-const DESCRIPTION_COL_KEY = "adv-description";
-const DESCRIPTION_COL_LABEL = "Description";
-const DAILY_ACTIVITY_QA = "DLY_ACTV_CD";
-const GET_COLUMNS_MESSAGE_TYPE = "adv:get-columns";
-const SERVICE_NOW_SYNC = "adv:servicenow-sync";
+import {
+  createColumnPrefsWriter,
+  setColumnFrozen,
+  setColumnVisibility,
+} from "./column-prefs";
 
 let prefs: ColumnPrefs = {
   hidden: [],
@@ -24,6 +30,7 @@ let prefs: ColumnPrefs = {
 };
 let columns: ColumnInfo[] = [];
 let lookupData: LookupDataRecord | null = null;
+const preferenceWriter = createColumnPrefsWriter(setColumnPrefs);
 
 function renderHeaderIcon() {
   const iconElement = document.getElementById(
@@ -63,11 +70,7 @@ async function init() {
   renderLookupSummary();
 
   syncButton.addEventListener("click", async () => {
-    const succeeded = await runServiceNowAction(
-      syncButton,
-      "Fetching...",
-      SERVICE_NOW_SYNC,
-    );
+    const succeeded = await runServiceNowAction(syncButton, "Fetching...");
     if (succeeded) {
       lookupData = await getLookupData();
       renderLookupSummary();
@@ -104,34 +107,35 @@ async function init() {
   });
 }
 
-async function sendServiceNowMessage<T = { ok: boolean; error?: string }>(
-  type: string,
-): Promise<T> {
+async function sendServiceNowMessage(): Promise<ServiceNowSyncResponse> {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ type }, (response: T | undefined) => {
-      const error = chrome.runtime.lastError;
-      if (error) {
-        reject(new Error(error.message));
-        return;
-      }
-      resolve(response as T);
-    });
+    chrome.runtime.sendMessage(
+      { type: SERVICE_NOW_SYNC_MESSAGE_TYPE },
+      (response: ServiceNowSyncResponse | undefined) => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        if (!response) {
+          reject(new Error("ServiceNow did not return a response."));
+          return;
+        }
+        resolve(response);
+      },
+    );
   });
 }
 
 async function runServiceNowAction(
   button: HTMLButtonElement,
   busyLabel: string,
-  type: string,
 ): Promise<boolean> {
   button.disabled = true;
   const originalLabel = button.textContent ?? "Action";
   button.textContent = busyLabel;
   try {
-    const response = await sendServiceNowMessage<{
-      ok: boolean;
-      error?: string;
-    }>(type);
+    const response = await sendServiceNowMessage();
     if (!response?.ok) throw new Error(response?.error ?? "Request failed.");
     return true;
   } catch (error) {
@@ -182,12 +186,10 @@ function renderColumnList(container: HTMLElement) {
     .forEach((input) => {
       input.addEventListener("change", async () => {
         const key = input.dataset.key!;
-        if (input.checked) {
-          prefs.hidden = prefs.hidden.filter((k) => k !== key);
-        } else {
-          if (!prefs.hidden.includes(key)) prefs.hidden.push(key);
-        }
-        await setColumnPrefs(prefs);
+        await persistColumnPrefs(
+          setColumnVisibility(prefs, key, input.checked),
+          container,
+        );
       });
     });
 
@@ -196,27 +198,31 @@ function renderColumnList(container: HTMLElement) {
     .forEach((input) => {
       input.addEventListener("change", async () => {
         const key = input.dataset.key!;
-        if (input.checked) {
-          if (!prefs.frozen.includes(key)) prefs.frozen.push(key);
-          if (
-            key === DESCRIPTION_COL_KEY &&
-            !prefs.frozen.includes(DAILY_ACTIVITY_QA)
-          ) {
-            prefs.frozen.unshift(DAILY_ACTIVITY_QA);
-          }
-        } else {
-          prefs.frozen = prefs.frozen.filter((k) => k !== key);
-          if (key === DAILY_ACTIVITY_QA) {
-            prefs.frozen = prefs.frozen.filter(
-              (k) => k !== DESCRIPTION_COL_KEY,
-            );
-          }
-        }
-        await setColumnPrefs(prefs);
-        prefs = await getColumnPrefs();
-        renderColumnList(container);
+        await persistColumnPrefs(
+          setColumnFrozen(prefs, key, input.checked),
+          container,
+        );
       });
     });
+}
+
+async function persistColumnPrefs(
+  nextPrefs: ColumnPrefs,
+  container: HTMLElement,
+): Promise<void> {
+  prefs = nextPrefs;
+
+  try {
+    await preferenceWriter.write(nextPrefs);
+    prefs = await getColumnPrefs();
+  } catch (error) {
+    prefs = await getColumnPrefs().catch(() => nextPrefs);
+    renderLookupError(
+      error instanceof Error ? error.message : "Column settings update failed.",
+    );
+  }
+
+  renderColumnList(container);
 }
 
 function createColumnRow(options: {
@@ -306,11 +312,13 @@ async function detectColumnsFromActiveTab(): Promise<ColumnInfo[]> {
   if (!tab?.id) return [];
 
   try {
-    const response = (await chrome.tabs.sendMessage(tab.id, {
+    const response: unknown = await chrome.tabs.sendMessage(tab.id, {
       type: GET_COLUMNS_MESSAGE_TYPE,
-    })) as { columns?: ColumnInfo[] } | undefined;
+    });
 
-    return ensureDescriptionColumn(response?.columns ?? []);
+    return ensureDescriptionColumn(
+      isGetColumnsResponse(response) ? response.columns : [],
+    );
   } catch {
     return ensureDescriptionColumn([]);
   }
