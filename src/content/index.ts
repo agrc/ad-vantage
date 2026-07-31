@@ -26,10 +26,8 @@ import {
 } from "./description-column";
 import {
   getColumnHeaders,
-  getColumnIndex,
   getColumnKey,
   getEnhanceableGrids,
-  getHeaderLabel,
   getHeaderRows,
   getMainHeaderRow,
   getStickyHeaderRow,
