@@ -48,6 +48,31 @@ describe("mapTaskRecords", () => {
 });
 
 describe("fetchTaskLookup", () => {
+  it("requests active tasks ending within the last two weeks and advances pagination offsets", async () => {
+    const firstPage = Array.from({ length: 500 }, (_, index) => ({
+      number: `PRJ${index}`,
+      short_description: `Task ${index}`,
+    }));
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ result: firstPage }))
+      .mockResolvedValueOnce(Response.json({ result: [] }));
+
+    await expect(fetchTaskLookup()).resolves.toMatchObject({ entryCount: 500 });
+
+    const firstUrl = new URL(String(fetchMock.mock.calls[0][0]));
+    const secondUrl = new URL(String(fetchMock.mock.calls[1][0]));
+    expect(firstUrl.searchParams.get("sysparm_query")).toBe(
+      "active=true" +
+        "^end_date>=javascript:gs.daysAgoStart(14)" +
+        "^assigned_to=javascript:gs.getUserID()" +
+        "^ORassignment_group=javascript:getMyGroups()" +
+        "^ORadditional_assignee_listLIKEjavascript:gs.getUserID()",
+    );
+    expect(firstUrl.searchParams.get("sysparm_offset")).toBe("0");
+    expect(secondUrl.searchParams.get("sysparm_offset")).toBe("500");
+  });
+
   it("clears a rejected token and retries once", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
