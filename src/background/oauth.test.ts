@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAuthToken, getAuthToken, setAuthToken } from "../shared/storage";
 import {
+  SERVICE_NOW_BASE_URL,
+  SERVICE_NOW_CLIENT_ID,
   authenticate,
   createCodeChallenge,
   createCodeVerifier,
@@ -68,6 +70,29 @@ describe("PKCE helpers", () => {
 });
 
 describe("authentication coordination", () => {
+  it("uses the selected environment for authorization and token exchange", async () => {
+    const fetchMock = completeAuthorization();
+
+    await authenticate();
+
+    expect(SERVICE_NOW_BASE_URL).toBe("https://test.servicenow.example");
+    expect(SERVICE_NOW_CLIENT_ID).toBe("test-client-id");
+
+    const authorizeUrl = new URL(launchWebAuthFlow.mock.calls[0][0].url);
+    expect(authorizeUrl.origin).toBe(SERVICE_NOW_BASE_URL);
+    expect(authorizeUrl.searchParams.get("client_id")).toBe(
+      SERVICE_NOW_CLIENT_ID,
+    );
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${SERVICE_NOW_BASE_URL}/oauth_token.do`,
+    );
+    const tokenRequest = new URLSearchParams(
+      String(fetchMock.mock.calls[0][1]?.body),
+    );
+    expect(tokenRequest.get("client_id")).toBe(SERVICE_NOW_CLIENT_ID);
+  });
+
   it("shares one interactive flow between concurrent callers", async () => {
     completeAuthorization();
 

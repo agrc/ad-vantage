@@ -5,8 +5,8 @@ import {
   type AuthTokenRecord,
 } from "../shared/storage";
 
-export const SERVICE_NOW_BASE_URL = "https://utahdev.servicenowservices.com";
-export const SERVICE_NOW_CLIENT_ID = "8982c05b2d9e418ba33f64dcd6a983d5";
+export const SERVICE_NOW_BASE_URL = import.meta.env.VITE_SERVICE_NOW_BASE_URL;
+export const SERVICE_NOW_CLIENT_ID = import.meta.env.VITE_SERVICE_NOW_CLIENT_ID;
 const TOKEN_PATH = "/oauth_token.do";
 const REFRESH_WINDOW_MS = 60_000;
 

@@ -4,7 +4,7 @@ import {
   deserializeLookupMap,
 } from "../shared/lookup";
 import { clearAuthToken } from "../shared/storage";
-import { getValidAccessToken } from "./oauth";
+import { SERVICE_NOW_BASE_URL, getValidAccessToken } from "./oauth";
 import { fetchTaskLookup, mapTaskRecords } from "./servicenow";
 
 vi.mock("../shared/storage", async (importOriginal) => ({
@@ -62,6 +62,8 @@ describe("fetchTaskLookup", () => {
 
     const firstUrl = new URL(String(fetchMock.mock.calls[0][0]));
     const secondUrl = new URL(String(fetchMock.mock.calls[1][0]));
+    expect(firstUrl.origin).toBe(SERVICE_NOW_BASE_URL);
+    expect(SERVICE_NOW_BASE_URL).toBe("https://test.servicenow.example");
     expect(firstUrl.searchParams.get("sysparm_query")).toBe(
       "active=true" +
         "^end_date>=javascript:gs.daysAgoStart(14)" +

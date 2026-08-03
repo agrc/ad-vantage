@@ -67,7 +67,7 @@ Use **Fetch from ServiceNow** in the popup to sign in and load current task desc
    pnpm dev
    ```
 
-   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running.
+   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. Vite loads the development ServiceNow endpoint and public OAuth client ID from `.env.development`.
 
 3. **Launch the dedicated debug browser:**
 
@@ -97,11 +97,19 @@ curl http://127.0.0.1:9223/json/version
 pnpm build
 ```
 
-Bundles and minifies the extension into the `dist` folder. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
+Bundles and minifies the extension into the `dist` folder using the ServiceNow endpoint and public OAuth client ID from `.env.production`. Replace its client ID placeholder with the production OAuth application's public client ID before building. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
 
 ### ServiceNow Integration
 
 The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Utah ServiceNow instance. The extension is a public OAuth client and does not contain or store a client secret.
+
+ServiceNow configuration is selected at build time through Vite modes:
+
+- `pnpm dev` uses `.env.development`.
+- `pnpm build` uses `.env.production`.
+- Tests use deterministic values from `.env.test`.
+
+These checked-in files contain public endpoints and OAuth client IDs, not client secrets. The generated extension manifest requests access only to the ServiceNow host selected for that build. Each ServiceNow OAuth Application Registry entry must allow the redirect URI returned by `chrome.identity.getRedirectURL()` for the corresponding extension ID.
 
 The task request uses the `sysparm_query` filter defined in [src/background/servicenow.ts](src/background/servicenow.ts).
 
