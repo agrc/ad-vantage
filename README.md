@@ -123,6 +123,8 @@ Fetched lookup data is stored in the current Chrome profile's isolated `chrome.s
 
 Test local queries using the [REST API Explorer](https://dev.workspaces.dts.utah.gov/now/nav/ui/classic/params/target/%24restapi.do) in the dev instance.
 
+Dev ServiceNow Instance: <https://utahdev.servicenowservices.com/>
+
 ### Tests
 
 ```bash
