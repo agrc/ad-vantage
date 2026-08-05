@@ -44,6 +44,10 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 
 Use **Fetch from ServiceNow** in the popup to sign in and load current task descriptions. The extension uses that information to populate the Description column and provide suggestions while entering Daily Activity codes. Your task data stays associated with your current browser profile.
 
+## DTS Guide
+
+There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8ttmPwVQLXsuaJRTw5BJWvLKGSXjzBMVTiM-g/edit?usp=sharing).
+
 ---
 
 ## Developer Guide
