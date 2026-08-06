@@ -35,13 +35,11 @@ export function ensureTimeWarningStyles(root: Document = document) {
   style.id = STYLES_ID;
   style.textContent = `
     td.adv-time-warn {
-      outline: 6px solid orange;
-      outline-offset: -6px;
+      background-color: orange !important;
     }
 
     td.adv-missing-event-warn {
-      outline: 6px solid red;
-      outline-offset: -6px;
+      background-color: red !important;
     }
   `;
   root.head.appendChild(style);
