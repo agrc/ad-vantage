@@ -60,5 +60,5 @@ function validateServiceNowClientId(value: string | undefined): string {
     throw new Error("VITE_SERVICE_NOW_CLIENT_ID is required.");
   }
 
-  return value;
+  return value.trim();
 }
