@@ -7,6 +7,9 @@ export default defineConfig(({ command, mode }) => {
   const serviceNowBaseUrl = validateServiceNowBaseUrl(
     environment.VITE_SERVICE_NOW_BASE_URL,
   );
+  const serviceNowClientId = validateServiceNowClientId(
+    environment.VITE_SERVICE_NOW_CLIENT_ID,
+  );
 
   return {
     plugins: [
@@ -20,9 +23,8 @@ export default defineConfig(({ command, mode }) => {
     define: {
       "import.meta.env.VITE_SERVICE_NOW_BASE_URL":
         JSON.stringify(serviceNowBaseUrl),
-      "import.meta.env.VITE_SERVICE_NOW_CLIENT_ID": JSON.stringify(
-        environment.VITE_SERVICE_NOW_CLIENT_ID,
-      ),
+      "import.meta.env.VITE_SERVICE_NOW_CLIENT_ID":
+        JSON.stringify(serviceNowClientId),
     },
     server: {
       cors: true,
@@ -48,6 +50,14 @@ function validateServiceNowBaseUrl(value: string | undefined): string {
     throw new Error(
       "VITE_SERVICE_NOW_BASE_URL must be an HTTPS origin without a path, query, hash, or trailing slash.",
     );
+  }
+
+  return value;
+}
+
+function validateServiceNowClientId(value: string | undefined): string {
+  if (!value?.trim()) {
+    throw new Error("VITE_SERVICE_NOW_CLIENT_ID is required.");
   }
 
   return value;
