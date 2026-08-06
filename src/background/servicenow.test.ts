@@ -125,4 +125,31 @@ describe("fetchTaskLookup", () => {
       "ServiceNow returned an invalid task response.",
     );
   });
+
+  it("aborts a stalled request and reports a helpful timeout error", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+      (_input, init) =>
+        new Promise((_, reject) => {
+          const signal = init?.signal;
+          if (!(signal instanceof AbortSignal)) {
+            throw new Error("Expected a request abort signal.");
+          }
+          signal.addEventListener("abort", () => {
+            reject(
+              new DOMException("The operation was aborted.", "AbortError"),
+            );
+          });
+        }),
+    );
+
+    const lookupPromise = fetchTaskLookup();
+    const timeoutAssertion = expect(lookupPromise).rejects.toThrow(
+      "ServiceNow task request timed out. Please try again.",
+    );
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await timeoutAssertion;
+    vi.useRealTimers();
+  });
 });
