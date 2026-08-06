@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.13](https://github.com/agrc/ad-vantage/compare/v1.3.12...v1.3.13) (2026-08-06)
+
+
+### Bug Fixes
+
+* harden service now api request with timeout and better error message ([66b5746](https://github.com/agrc/ad-vantage/commit/66b5746ec18d31343a5f4384ebdbce8fa51aa073)), refs [#59](https://github.com/agrc/ad-vantage/issues/59)
+* move client id to secret ([14c2a93](https://github.com/agrc/ad-vantage/commit/14c2a93fef95bcf05409ac1c120979b4666b90ab))
+* Nicer looking highlights ([8189106](https://github.com/agrc/ad-vantage/commit/81891060930c10dc1cd10823d04bf7af478ddf87))
+* point at production ServiceNow environment ([05ac92a](https://github.com/agrc/ad-vantage/commit/05ac92ac629339eac48af661b7cb7ba4ccc38df9))
+* update submit feedback link to go to the service now new ticket form ([7ae12b6](https://github.com/agrc/ad-vantage/commit/7ae12b6de84737f52263700826d338a3f0bef90d)), refs [#25](https://github.com/agrc/ad-vantage/issues/25)
+
 ## [1.3.12](https://github.com/agrc/ad-vantage/compare/v1.3.11...v1.3.12) (2026-07-31)
 
 
