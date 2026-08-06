@@ -14,6 +14,7 @@ const TASK_QUERY =
 
 const PAGE_SIZE = 500;
 const MAX_RECORDS = 10_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 interface ServiceNowTask {
   number?: unknown;
@@ -71,9 +72,31 @@ async function fetchPage(
     sysparm_query: TASK_QUERY,
   }).toString();
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  });
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(
+    () => abortController.abort(),
+    REQUEST_TIMEOUT_MS,
+  );
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: abortController.signal,
+    });
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      const timeoutError = new Error(
+        "ServiceNow task request timed out. Please try again.",
+      ) as Error & { cause: unknown };
+      timeoutError.cause = error;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
   if (response.status === 401) {
     if (retryUnauthorized) {
       await clearAuthToken();
