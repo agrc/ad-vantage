@@ -85,4 +85,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🏗️ Build
+        env:
+          VITE_SERVICE_NOW_CLIENT_ID: pull-request-build-client-id
         run: pnpm build

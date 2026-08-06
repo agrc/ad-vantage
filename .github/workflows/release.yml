@@ -20,6 +20,7 @@ jobs:
       PUBLISHER_ID: ${{ secrets.PUBLISHER_ID }}
       GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      VITE_SERVICE_NOW_CLIENT_ID: ${{ secrets.VITE_SERVICE_NOW_CLIENT_ID }}
 
     steps:
       - name: Check out released commit

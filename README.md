@@ -67,15 +67,23 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
    pnpm install
    ```
 
-2. **Start the development server:**
+2. **Configure the local OAuth client ID:**
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Replace the placeholder in `.env.local` with the public client ID from the ServiceNow OAuth application registration.
+
+3. **Start the development server:**
 
    ```bash
    pnpm dev
    ```
 
-   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. Vite loads the development ServiceNow endpoint and public OAuth client ID from `.env.development`.
+   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
 
-3. **Launch the dedicated debug browser:**
+4. **Launch the dedicated debug browser:**
 
    ```bash
    pnpm chrome:dev
@@ -83,11 +91,11 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
 
    Opens Google Chrome Dev with remote debugging on `http://127.0.0.1:9223`. Keep this browser open while using MCP-based browser inspection.
 
-4. In the Chrome Dev window, go to `chrome://extensions/`, enable **Developer mode**, and load the `dist-dev` folder as an unpacked extension.
+5. In the Chrome Dev window, go to `chrome://extensions/`, enable **Developer mode**, and load the `dist-dev` folder as an unpacked extension.
 
-5. Log in to Vantage in that same Chrome Dev window.
+6. Log in to Vantage in that same Chrome Dev window.
 
-6. Reload VS Code after the browser is running so the MCP server in `.vscode/mcp.json` can connect.
+7. Reload VS Code after the browser is running so the MCP server in `.vscode/mcp.json` can connect.
 
 You can verify the remote debugging endpoint with:
 
@@ -103,7 +111,7 @@ curl http://127.0.0.1:9223/json/version
 pnpm build
 ```
 
-Bundles and minifies the extension into the `dist` folder using the ServiceNow endpoint and public OAuth client ID from `.env.production`. Replace its client ID placeholder with the production OAuth application's public client ID before building. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
+Bundles and minifies the extension into the `dist` folder using the ServiceNow endpoint from `.env.production` and the public OAuth client ID from `.env.local` or the `VITE_SERVICE_NOW_CLIENT_ID` environment variable. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
 
 ### ServiceNow Integration
 
@@ -111,11 +119,11 @@ The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Ut
 
 ServiceNow configuration is selected at build time through Vite modes:
 
-- `pnpm dev` uses `.env.development`.
-- `pnpm build` uses `.env.production`.
+- `pnpm dev` uses `.env.development` and `.env.local`.
+- `pnpm build` uses `.env.production` and `.env.local`, or `VITE_SERVICE_NOW_CLIENT_ID` from the environment.
 - Tests use deterministic values from `.env.test`.
 
-These checked-in files contain public endpoints and OAuth client IDs, not client secrets. The generated extension manifest requests access only to the ServiceNow host selected for that build. Each ServiceNow OAuth Application Registry entry must allow the redirect URI returned by `chrome.identity.getRedirectURL()` for the corresponding extension ID.
+The repository includes public ServiceNow endpoints but no OAuth client IDs. Release builds use the `VITE_SERVICE_NOW_CLIENT_ID` GitHub Actions secret. The generated extension manifest requests access only to the ServiceNow host selected for that build. Each ServiceNow OAuth Application Registry entry must allow the redirect URI returned by `chrome.identity.getRedirectURL()` for the corresponding extension ID.
 
 The task request uses the `sysparm_query` filter defined in [src/background/servicenow.ts](src/background/servicenow.ts).
 
