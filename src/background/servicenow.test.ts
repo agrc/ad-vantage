@@ -147,9 +147,44 @@ describe("fetchTaskLookup", () => {
     const timeoutAssertion = expect(lookupPromise).rejects.toThrow(
       "ServiceNow task request timed out. Please try again.",
     );
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTimeAsync(45_000);
 
     await timeoutAssertion;
     vi.useRealTimers();
+  });
+
+  it("aborts a stalled response body and reports a helpful timeout error", async () => {
+    vi.useFakeTimers();
+    try {
+      const response = new Response();
+      let requestSignal: AbortSignal | undefined;
+      vi.spyOn(globalThis, "fetch").mockImplementationOnce((_input, init) => {
+        requestSignal = init?.signal ?? undefined;
+        return Promise.resolve(response);
+      });
+      vi.spyOn(response, "json").mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            if (!requestSignal) {
+              throw new Error("Expected a request abort signal.");
+            }
+            requestSignal.addEventListener("abort", () => {
+              reject(
+                new DOMException("The operation was aborted.", "AbortError"),
+              );
+            });
+          }),
+      );
+
+      const lookupPromise = fetchTaskLookup();
+      const timeoutAssertion = expect(lookupPromise).rejects.toThrow(
+        "ServiceNow task request timed out. Please try again.",
+      );
+      await vi.advanceTimersByTimeAsync(45_000);
+
+      await timeoutAssertion;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -14,7 +14,7 @@ const TASK_QUERY =
 
 const PAGE_SIZE = 500;
 const MAX_RECORDS = 10_000;
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 
 interface ServiceNowTask {
   number?: unknown;
@@ -77,13 +77,30 @@ async function fetchPage(
     () => abortController.abort(),
     REQUEST_TIMEOUT_MS,
   );
-  let response: Response;
 
   try {
-    response = await fetch(url, {
+    const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       signal: abortController.signal,
     });
+
+    if (response.status === 401) {
+      if (retryUnauthorized) {
+        await clearAuthToken();
+        return fetchPage(offset, false);
+      }
+      throw new Error("ServiceNow session expired. Fetch again to sign in.");
+    }
+    if (!response.ok) {
+      throw new Error(`ServiceNow task fetch failed (${response.status}).`);
+    }
+
+    const payload = (await response.json()) as { result?: unknown };
+    if (!Array.isArray(payload.result)) {
+      throw new Error("ServiceNow returned an invalid task response.");
+    }
+
+    return payload.result as ServiceNowTask[];
   } catch (error) {
     if (abortController.signal.aborted) {
       const timeoutError = new Error(
@@ -96,21 +113,4 @@ async function fetchPage(
   } finally {
     clearTimeout(timeoutId);
   }
-
-  if (response.status === 401) {
-    if (retryUnauthorized) {
-      await clearAuthToken();
-      return fetchPage(offset, false);
-    }
-    throw new Error("ServiceNow session expired. Fetch again to sign in.");
-  }
-  if (!response.ok) {
-    throw new Error(`ServiceNow task fetch failed (${response.status}).`);
-  }
-
-  const payload = (await response.json()) as { result?: unknown };
-  if (!Array.isArray(payload.result)) {
-    throw new Error("ServiceNow returned an invalid task response.");
-  }
-  return payload.result as ServiceNowTask[];
 }
