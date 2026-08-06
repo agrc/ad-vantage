@@ -42,7 +42,7 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 
 ### ServiceNow Task Sync
 
-Use **Fetch from ServiceNow** in the popup to sign in and load current task descriptions. The extension uses that information to populate the Description column and provide suggestions while entering Daily Activity codes. Your task data stays associated with your current browser profile.
+Use **Fetch from ServiceNow** in the popup to sign in and load current task descriptions. The extension uses that information to populate the Description column and provide suggestions while entering Daily Activity codes. Your task data stays associated with your current browser profile and will need to be refreshed any time your ServiceNow tasks change. The extension does not store or transmit your ServiceNow credentials.
 
 The sync request times out after 30 seconds. When it fails or times out, the popup shows an error and lets you try again.
 
