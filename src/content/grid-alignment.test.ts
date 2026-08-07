@@ -54,7 +54,7 @@ describe("applyColumnWidth", () => {
 
     expect(applyColumnWidth(cell, 88)).toBe(true);
     expect(cell.style.width).toBe("88px");
-    expect(cell.style.minWidth).toBe("0");
+    expect(Number.parseFloat(cell.style.minWidth)).toBe(0);
     expect(cell.style.maxWidth).toBe("88px");
   });
 
