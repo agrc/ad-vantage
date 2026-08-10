@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.14](https://github.com/agrc/ad-vantage/compare/v1.3.13...v1.3.14) (2026-08-10)
+
+
+### Bug Fixes
+
+* point "Send Feedback" link to ask hr app ([44b3a8d](https://github.com/agrc/ad-vantage/commit/44b3a8d43e0adebba0e8ff6a4dd471d1758fc093))
+
+
+### Dependencies
+
+* **dev:** bump the major-dependencies group across 1 directory with 4 updates ([ef531b0](https://github.com/agrc/ad-vantage/commit/ef531b0020dcbd25cf38de443ef317eaa0c9b0d0))
+
 ## [1.3.13](https://github.com/agrc/ad-vantage/compare/v1.3.12...v1.3.13) (2026-08-06)
 
 
