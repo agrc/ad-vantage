@@ -134,3 +134,16 @@ jobs:
             -X POST \
             -d '{}' \
             "${api_base}:publish" | jq .
+
+  notify:
+    name: Notifications
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Release Notifier
+        uses: agrc/release-issue-notifications-action@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
