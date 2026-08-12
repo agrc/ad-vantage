@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.15](https://github.com/agrc/ad-vantage/compare/v1.3.14...v1.3.15) (2026-08-12)
+
+
+### Bug Fixes
+
+* switch feedback link to point to ServiceNow ([d46b60f](https://github.com/agrc/ad-vantage/commit/d46b60f5a1642582cb25b359472577d9fd46d854))
+* use a unique production service worker entrypoint ([69ec6ae](https://github.com/agrc/ad-vantage/commit/69ec6ae5e2d19af0ebe3f3dbdb231790587a1cd4))
+
 ## [1.3.14](https://github.com/agrc/ad-vantage/compare/v1.3.13...v1.3.14) (2026-08-10)
 
 
