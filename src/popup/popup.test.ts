@@ -82,7 +82,7 @@ beforeEach(() => {
     runtime: {
       getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
       getManifest: vi.fn(() => ({
-        name: "ad-vantage Pre-release",
+        name: "ad-vantage (Pre-release)",
         version: "1.2.3",
         icons: { "48": "icons/pre-release/icon48.png" },
       })),
@@ -114,7 +114,7 @@ describe("popup integration", () => {
       (document.getElementById("header-icon") as HTMLImageElement).src,
     ).toBe("chrome-extension://test/icons/pre-release/icon48.png");
     expect(document.body.dataset.theme).toBe("pre-release");
-    expect(document.title).toBe("ad-vantage Pre-release");
+    expect(document.title).toBe("ad-vantage (Pre-release)");
     expect(document.getElementById("lookup-summary")?.textContent).toContain(
       "Total tasks loaded: 1",
     );
