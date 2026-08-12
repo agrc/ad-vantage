@@ -36,9 +36,23 @@ function renderHeaderIcon() {
   const iconElement = document.getElementById(
     "header-icon",
   ) as HTMLImageElement | null;
-  if (!iconElement) return;
+  const iconPath = chrome.runtime.getManifest().icons?.["48"];
+  if (!iconElement || !iconPath) return;
 
-  iconElement.src = chrome.runtime.getURL("icons/icon48.png");
+  iconElement.src = chrome.runtime.getURL(iconPath);
+  document.body.dataset.theme = iconPath.startsWith("icons/pre-release/")
+    ? "pre-release"
+    : "production";
+}
+
+function renderExtensionName() {
+  const extensionName = chrome.runtime.getManifest().name;
+  const nameElement = document.getElementById("extension-name");
+  if (nameElement) {
+    nameElement.textContent = extensionName;
+  }
+
+  document.title = extensionName;
 }
 
 function renderExtensionVersion() {
@@ -50,6 +64,7 @@ function renderExtensionVersion() {
 
 async function init() {
   renderHeaderIcon();
+  renderExtensionName();
   renderExtensionVersion();
 
   const [nextPrefs, nextColumns, nextLookupData] = await Promise.all([

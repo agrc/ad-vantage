@@ -2,7 +2,7 @@ import { browser } from "@ugrc/eslint-config";
 
 export default [
   {
-    ignores: ["dist/**", "dist-dev/**"],
+    ignores: ["dist/**", "dist-dev/**", "dist-pre-release/**"],
   },
   ...browser,
 ];

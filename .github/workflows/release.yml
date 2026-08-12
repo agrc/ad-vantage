@@ -6,16 +6,17 @@ on:
 
 jobs:
   publish-artifact:
-    name: Publish extension artifact
+    name: Publish ${{ github.event.release.prerelease && 'pre-release' || 'production' }} extension
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
     environment:
-      name: prod
-      url: https://chromewebstore.google.com/detail/ad-vantage/cojahhgafebkcbophmfofpihokooonod
+      name: ${{ github.event.release.prerelease && 'dev' || 'prod' }}
     env:
       RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      BUILD_OUTPUT: ${{ github.event.release.prerelease && 'dist-pre-release' || 'dist' }}
+      ARCHIVE_PREFIX: ${{ github.event.release.prerelease && 'ad-vantage-pre-release' || 'ad-vantage' }}
       EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
       PUBLISHER_ID: ${{ secrets.PUBLISHER_ID }}
       GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
@@ -43,12 +44,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build production extension
+        if: github.event.release.prerelease == false
         run: pnpm build
+
+      - name: Build pre-release extension
+        if: github.event.release.prerelease
+        run: pnpm build:pre-release
 
       - name: Package extension
         run: |
-          archive="ad-vantage-${RELEASE_VERSION}.zip"
-          cd dist
+          archive="${ARCHIVE_PREFIX}-${RELEASE_VERSION}.zip"
+          cd "$BUILD_OUTPUT"
           zip -r "../${archive}" .
           echo "ARCHIVE_NAME=${archive}" >> "$GITHUB_ENV"
 
@@ -62,7 +68,7 @@ jobs:
         run: |
           missing=0
 
-          for name in EXTENSION_ID PUBLISHER_ID GCP_SERVICE_ACCOUNT_EMAIL GCP_WORKLOAD_IDENTITY_PROVIDER; do
+          for name in EXTENSION_ID PUBLISHER_ID GCP_SERVICE_ACCOUNT_EMAIL GCP_WORKLOAD_IDENTITY_PROVIDER VITE_SERVICE_NOW_CLIENT_ID; do
             if [ -z "${!name}" ]; then
               echo "Missing $name; Chrome Web Store publish will be skipped."
               missing=1

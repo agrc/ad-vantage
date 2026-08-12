@@ -21,6 +21,10 @@ body {
   overflow: hidden;
 }
 
+body[data-theme="pre-release"] {
+  background: #fff7ed;
+}
+
 html {
   width: 320px;
   max-width: 320px;
@@ -32,6 +36,10 @@ header {
   color: #fff;
   padding: 12px 16px 10px;
   flex-shrink: 0;
+}
+
+body[data-theme="pre-release"] header {
+  background: #9a3412;
 }
 
 .title-row {
