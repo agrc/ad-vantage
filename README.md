@@ -113,6 +113,14 @@ pnpm build
 
 Bundles and minifies the extension into the `dist` folder using the ServiceNow endpoint from `.env.production` and the public OAuth client ID from `.env.local` or the `VITE_SERVICE_NOW_CLIENT_ID` environment variable. Load `dist` as an unpacked extension in `chrome://extensions/` to test the production build.
 
+### Pre-release Build
+
+```bash
+pnpm build:pre-release
+```
+
+Bundles the separately publishable pre-release extension into `dist-pre-release`. It uses the pre-release ServiceNow endpoint from `.env.pre-release`, the `ad-vantage Pre-release` title, orange icons, and a warm popup theme. Its manifest deliberately has no `key`: Chrome Web Store assigns and maintains a distinct ID when the pre-release build is first submitted. A source version such as `1.3.14-rc.1` is normalized to the Chrome-compatible manifest version `1.3.14.1`.
+
 ### ServiceNow Integration
 
 The popup uses OAuth 2.0 Authorization Code with PKCE to fetch tasks from the Utah ServiceNow instance. The extension is a public OAuth client and does not contain or store a client secret.
@@ -121,6 +129,7 @@ ServiceNow configuration is selected at build time through Vite modes:
 
 - `pnpm dev` uses `.env.development` and `.env.local`.
 - `pnpm build` uses `.env.production` and `.env.local`, or `VITE_SERVICE_NOW_CLIENT_ID` from the environment.
+- `pnpm build:pre-release` uses `.env.pre-release` and `.env.local`, or `VITE_SERVICE_NOW_CLIENT_ID` from the environment.
 - Tests use deterministic values from `.env.test`.
 
 The repository includes public ServiceNow endpoints but no OAuth client IDs. Release builds use the `VITE_SERVICE_NOW_CLIENT_ID` GitHub Actions secret. The generated extension manifest requests access only to the ServiceNow host selected for that build. Each ServiceNow OAuth Application Registry entry must allow the redirect URI returned by `chrome.identity.getRedirectURL()` for the corresponding extension ID.
@@ -145,6 +154,8 @@ pnpm test
 
 The release workflow can publish new versions to the Chrome Web Store after the first manual submission.
 
+The production and pre-release extensions are separate Chrome Web Store items with different IDs. The production build pins the existing production ID with `VITE_EXTENSION_KEY`; the pre-release build must remain without a key so its Chrome Web Store item retains its own assigned ID.
+
 #### First-Time Store Setup
 
 1. Create a Chrome Web Store developer account and enable 2-step verification.
@@ -162,6 +173,9 @@ Add these repository secrets to enable automated publishing on release:
 - `PUBLISHER_ID` - Chrome Web Store publisher ID from the Developer Dashboard's Publisher settings.
 - `GCP_WORKLOAD_IDENTITY_PROVIDER` - full WIF provider resource name, in the form `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID`.
 - `GCP_SERVICE_ACCOUNT_EMAIL` - email address of the service account added to the Chrome Web Store publisher.
+- `VITE_SERVICE_NOW_CLIENT_ID` - OAuth client ID for the environment's extension.
+
+Set `EXTENSION_ID` and `VITE_SERVICE_NOW_CLIENT_ID` separately in the `dev` and `prod` GitHub environments. Make the shared publisher and WIF credentials available to both environments. The release workflow selects `dev` for prereleases and `prod` for stable releases.
 
 Before publishing, enable the Chrome Web Store API in the Google Cloud project and add the service account in the Chrome Web Store Developer Dashboard under Account. A publisher can have one service account.
 
@@ -169,7 +183,7 @@ The existing WIF provider and IAM binding must allow this repository's release w
 
 If any required secret or variable is missing, the release workflow still uploads the built zip to GitHub Releases and skips the Chrome Web Store step.
 
-Once configured, each published GitHub release builds the extension, uploads the archive to GitHub Releases, uses WIF to obtain a short-lived service-account access token, then uploads and submits the extension to the Chrome Web Store.
+Once configured, a published prerelease from `dev` builds the orange pre-release extension, uploads its archive to GitHub Releases, and publishes it to the restricted pre-release Chrome Web Store item. A published stable release from `main` follows the same process for the blue production extension and production Store item.
 
 ### Releases
 

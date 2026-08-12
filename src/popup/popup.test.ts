@@ -25,6 +25,7 @@ vi.mock("../shared/storage", async (importOriginal) => {
 function renderPopupFixture() {
   document.body.innerHTML = `
     <img id="header-icon">
+    <h1 id="extension-name"></h1>
     <span id="extension-version"></span>
     <button id="sync-btn">Fetch from ServiceNow</button>
     <div id="lookup-summary"></div>
@@ -46,6 +47,9 @@ async function loadPopup() {
   await vi.waitFor(() => {
     expect(document.getElementById("extension-version")?.textContent).toBe(
       "v1.2.3",
+    );
+    expect(document.getElementById("extension-name")?.textContent).toBe(
+      "ad-vantage Pre-release",
     );
   });
 }
@@ -77,7 +81,11 @@ beforeEach(() => {
   vi.stubGlobal("chrome", {
     runtime: {
       getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
-      getManifest: vi.fn(() => ({ version: "1.2.3" })),
+      getManifest: vi.fn(() => ({
+        name: "ad-vantage Pre-release",
+        version: "1.2.3",
+        icons: { "48": "icons/pre-release/icon48.png" },
+      })),
       sendMessage: vi.fn((_message, callback) => callback({ ok: true })),
       lastError: undefined,
     },
@@ -104,7 +112,9 @@ describe("popup integration", () => {
 
     expect(
       (document.getElementById("header-icon") as HTMLImageElement).src,
-    ).toBe("chrome-extension://test/icons/icon48.png");
+    ).toBe("chrome-extension://test/icons/pre-release/icon48.png");
+    expect(document.body.dataset.theme).toBe("pre-release");
+    expect(document.title).toBe("ad-vantage Pre-release");
     expect(document.getElementById("lookup-summary")?.textContent).toContain(
       "Total tasks loaded: 1",
     );
