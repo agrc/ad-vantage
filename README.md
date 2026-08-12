@@ -188,3 +188,11 @@ Releases are managed with `agrc/release-composite-action` via GitHub Actions usi
 - Merging a release PR publishes the release and uploads the built extension archive.
 
 Use squash merges so the PR title becomes the changelog entry. The workflow automatically bumps the version in `package.json` and `manifest.json` — do not edit those files manually to cut a release.
+
+### Skills
+
+This project has a [chrome-extensions skill](https://github.com/GoogleChrome/modern-web-guidance-src) installed from Google. You can update the skill with the following command:
+
+```bash
+pnpm dlx skills update chrome-extensions
+```
