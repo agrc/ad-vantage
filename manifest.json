@@ -9,13 +9,10 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [
-    "identity",
-    "storage"
-  ],
+  "permissions": ["identity", "storage"],
   "host_permissions": [],
   "background": {
-    "service_worker": "src/background/index.ts",
+    "service_worker": "src/background/service-worker.ts",
     "type": "module"
   },
   "action": {
@@ -33,9 +30,7 @@
         "https://vantage.utah.gov/*",
         "https://vantage.access.utah.gov/*"
       ],
-      "js": [
-        "src/content/index.ts"
-      ]
+      "js": ["src/content/index.ts"]
     }
   ]
 }
