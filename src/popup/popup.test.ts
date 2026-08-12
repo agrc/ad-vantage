@@ -49,7 +49,7 @@ async function loadPopup() {
       "v1.2.3",
     );
     expect(document.getElementById("extension-name")?.textContent).toBe(
-      "ad-vantage Pre-release",
+      "ad-vantage (Pre-release)",
     );
   });
 }
