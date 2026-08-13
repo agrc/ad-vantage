@@ -5,6 +5,7 @@ import {
   getEnhanceableGrids,
   getMainHeaderRow,
   getStickyHeaderRow,
+  isDailyActivityGrid,
 } from "./grid-dom";
 
 describe("grid discovery", () => {
@@ -21,6 +22,18 @@ describe("grid discovery", () => {
     expect(grids).toHaveLength(1);
     expect(grids[0].getAttribute("role")).toBe("grid");
     expect(getMainHeaderRow(grids[0])?.textContent).toBe("Main");
+  });
+
+  it("identifies the Daily Activity tab grid", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <div role="grid"><table><thead><tr><th data-qa="DLY_ACTV_CD">Daily Activity</th></tr></thead></table></div>
+      <div role="grid"><table><thead><tr><th>Other</th></tr></thead></table></div>
+    `;
+    const [dailyActivityGrid, otherGrid] = getEnhanceableGrids(root);
+
+    expect(isDailyActivityGrid(dailyActivityGrid)).toBe(true);
+    expect(isDailyActivityGrid(otherGrid)).toBe(false);
   });
 
   it("finds the sticky sibling header for a table grid", () => {

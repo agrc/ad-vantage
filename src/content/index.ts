@@ -31,6 +31,7 @@ import {
   getHeaderRows,
   getMainHeaderRow,
   getStickyHeaderRow,
+  isDailyActivityGrid,
   isEnhanceableGrid,
 } from "./grid-dom";
 import { createUpdateTimesheetShortcutController } from "./page-actions";
@@ -144,6 +145,9 @@ function applyEnhancements() {
 
     hasLoggedMissingGrid = false;
     grids.forEach(enhanceGrid);
+    grids
+      .filter(isDailyActivityGrid)
+      .forEach((grid) => paginationAutomation.sync(grid));
   } finally {
     mutationObserver?.observe(document.body, {
       childList: true,
@@ -194,7 +198,6 @@ function enhanceGrid(grid: HTMLElement) {
   }
   autocomplete.bind(grid, mainHeaderRow, lookupEntries);
   applyTimeWarnings(grid, mainHeaderRow);
-  paginationAutomation.sync(grid);
 }
 
 function getColumnsForPopup(): ColumnInfo[] {
