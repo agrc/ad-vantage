@@ -121,7 +121,16 @@ pnpm build:pre-release
 
 Bundles the separately publishable pre-release extension into `dist-pre-release`. It uses the pre-release ServiceNow endpoint from `.env.pre-release`, the `ad-vantage (Pre-release)` title, orange icons, and a warm popup theme. Its manifest deliberately has no `key`: Chrome Web Store assigns and maintains a distinct ID when the pre-release build is first submitted. A source version such as `1.3.14-rc.1` is normalized to the Chrome-compatible manifest version `1.3.14.1`.
 
-The [pre-release extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) is only available to members of the following Google Group: `ad-vantage-pre-release@utah.gov`
+#### Pre-release Tester Workflow
+
+The pre-release extension can be installed alongside the production extension. To avoid both versions modifying the same Vantage page, keep only one enabled at a time:
+
+1. Install the [pre-release extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) from the Chrome Web Store. You must be a member of `ad-vantage-pre-release@utah.gov` Google Group to access it.
+2. Open `chrome://extensions/`, find **ad-vantage**, and turn its toggle off before testing the pre-release version.
+3. Verify that **ad-vantage (Pre-release)** is enabled, then reload any open Vantage tabs before testing.
+4. To switch back to production, open `chrome://extensions/`, turn **ad-vantage (Pre-release)** off, turn **ad-vantage** on, and reload Vantage tabs.
+
+Do not uninstall either extension to switch versions. Turning off the version you are not testing preserves its settings and lets you move between production and pre-release builds quickly.
 
 ### ServiceNow Integration
 
