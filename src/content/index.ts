@@ -263,6 +263,8 @@ function observeMutations() {
   });
 
   mutationObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["aria-label"],
     childList: true,
     subtree: true,
   });
