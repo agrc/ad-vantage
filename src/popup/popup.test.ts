@@ -26,7 +26,7 @@ function renderPopupFixture() {
   document.body.innerHTML = `
     <img id="header-icon">
     <h1 id="extension-name"></h1>
-    <span id="extension-version"></span>
+    <a id="extension-version"></a>
     <button id="sync-btn">Fetch from ServiceNow</button>
     <div id="lookup-summary"></div>
     <p id="empty-state"></p>
@@ -42,14 +42,14 @@ function clonePrefs(): ColumnPrefs {
   };
 }
 
-async function loadPopup() {
+async function loadPopup(extensionName = "ad-vantage (Pre-release)") {
   await import("./popup");
   await vi.waitFor(() => {
     expect(document.getElementById("extension-version")?.textContent).toBe(
       "v1.2.3",
     );
     expect(document.getElementById("extension-name")?.textContent).toBe(
-      "ad-vantage (Pre-release)",
+      extensionName,
     );
   });
 }
@@ -115,6 +115,9 @@ describe("popup integration", () => {
     ).toBe("chrome-extension://test/icons/pre-release/icon48.png");
     expect(document.body.dataset.theme).toBe("pre-release");
     expect(document.title).toBe("ad-vantage (Pre-release)");
+    expect(
+      document.getElementById("extension-version")?.getAttribute("href"),
+    ).toBe("https://github.com/agrc/ad-vantage/blob/dev/CHANGELOG.md");
     expect(document.getElementById("lookup-summary")?.textContent).toContain(
       "Total tasks loaded: 1",
     );
@@ -123,6 +126,24 @@ describe("popup integration", () => {
         (element) => element.textContent,
       ),
     ).toEqual(["Daily Activity", "Description", "Mon"]);
+  });
+
+  it("links production builds to the main changelog", async () => {
+    const runtime = chrome.runtime as typeof chrome.runtime & {
+      getManifest: ReturnType<typeof vi.fn>;
+    };
+    runtime.getManifest.mockReturnValue({
+      name: "ad-vantage",
+      version: "1.2.3",
+      icons: { "48": "icons/icon48.png" },
+    });
+
+    await loadPopup("ad-vantage");
+
+    expect(document.body.dataset.theme).toBe("production");
+    expect(
+      document.getElementById("extension-version")?.getAttribute("href"),
+    ).toBe("https://github.com/agrc/ad-vantage/blob/main/CHANGELOG.md");
   });
 
   it("persists visibility changes and rerenders from stored preferences", async () => {
