@@ -40,9 +40,19 @@ function renderHeaderIcon() {
   if (!iconElement || !iconPath) return;
 
   iconElement.src = chrome.runtime.getURL(iconPath);
-  document.body.dataset.theme = iconPath.startsWith("icons/pre-release/")
-    ? "pre-release"
-    : "production";
+  const isPreRelease = iconPath.startsWith("icons/pre-release/");
+  document.body.dataset.theme = isPreRelease ? "pre-release" : "production";
+  renderChangelogLink(isPreRelease);
+}
+
+function renderChangelogLink(isPreRelease: boolean) {
+  const versionElement = document.getElementById(
+    "extension-version",
+  ) as HTMLAnchorElement | null;
+  if (!versionElement) return;
+
+  const branch = isPreRelease ? "dev" : "main";
+  versionElement.href = `https://github.com/agrc/ad-vantage/blob/${branch}/CHANGELOG.md`;
 }
 
 function renderExtensionName() {
@@ -56,7 +66,9 @@ function renderExtensionName() {
 }
 
 function renderExtensionVersion() {
-  const versionElement = document.getElementById("extension-version");
+  const versionElement = document.getElementById(
+    "extension-version",
+  ) as HTMLAnchorElement | null;
   if (!versionElement) return;
 
   versionElement.textContent = `v${chrome.runtime.getManifest().version}`;
