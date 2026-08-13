@@ -31,6 +31,7 @@ let prefs: ColumnPrefs = {
 let columns: ColumnInfo[] = [];
 let lookupData: LookupDataRecord | null = null;
 const preferenceWriter = createColumnPrefsWriter(setColumnPrefs);
+const SERVICE_NOW_RESPONSE_TIMEOUT_MS = 60_000;
 
 function renderHeaderIcon() {
   const iconElement = document.getElementById(
@@ -136,9 +137,18 @@ async function init() {
 
 async function sendServiceNowMessage(): Promise<ServiceNowSyncResponse> {
   return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(
+        new Error(
+          "The ServiceNow background process did not respond. Try again.",
+        ),
+      );
+    }, SERVICE_NOW_RESPONSE_TIMEOUT_MS);
+
     chrome.runtime.sendMessage(
       { type: SERVICE_NOW_SYNC_MESSAGE_TYPE },
       (response: ServiceNowSyncResponse | undefined) => {
+        clearTimeout(timeoutId);
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
