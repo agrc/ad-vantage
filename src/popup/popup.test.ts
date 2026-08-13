@@ -202,4 +202,30 @@ describe("popup integration", () => {
       )?.checked,
     ).toBe(true);
   });
+
+  it("shows an error and restores the sync button when the background does not respond", async () => {
+    const runtime = chrome.runtime as typeof chrome.runtime & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    runtime.sendMessage.mockImplementation(() => undefined);
+    await loadPopup();
+
+    vi.useFakeTimers();
+    document.getElementById("sync-btn")?.click();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(document.getElementById("lookup-summary")?.textContent).toBe(
+      "The ServiceNow background process did not respond. Try again.",
+    );
+    expect(document.getElementById("lookup-summary")?.dataset.state).toBe(
+      "error",
+    );
+    expect(document.getElementById("sync-btn")?.textContent).toBe(
+      "Fetch from ServiceNow",
+    );
+    expect(
+      (document.getElementById("sync-btn") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    vi.useRealTimers();
+  });
 });
