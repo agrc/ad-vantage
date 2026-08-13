@@ -121,7 +121,7 @@ pnpm build:pre-release
 
 Bundles the separately publishable pre-release extension into `dist-pre-release`. It uses the pre-release ServiceNow endpoint from `.env.pre-release`, the `ad-vantage (Pre-release)` title, orange icons, and a warm popup theme. Its manifest deliberately has no `key`: Chrome Web Store assigns and maintains a distinct ID when the pre-release build is first submitted. A source version such as `1.3.14-rc.1` is normalized to the Chrome-compatible manifest version `1.3.14.1`.
 
-The pre-release extension is only available to members of the following Google Group: `ad-vantage-pre-release@utah.gov`
+The [pre-release extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) is only available to members of the following Google Group: `ad-vantage-pre-release@utah.gov`
 
 ### ServiceNow Integration
 
