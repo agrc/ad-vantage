@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.15-rc.1](https://github.com/agrc/ad-vantage/compare/v1.3.14...v1.3.15-rc.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* auto-select largest pagination value bug ([c50756f](https://github.com/agrc/ad-vantage/commit/c50756fbfce1270997d6163d01d25ccfafde8a70)), refs [#71](https://github.com/agrc/ad-vantage/issues/71)
+* fix bug causing headers from partial showing through frozen columns ([4b73b81](https://github.com/agrc/ad-vantage/commit/4b73b8163b322f7fe6509332737240b4e28f7161))
+* fix bug causing mis-aligned headers after sorting a grid ([73ac73f](https://github.com/agrc/ad-vantage/commit/73ac73f280476b278e16145e17a3a50184dfec2d)), refs [#72](https://github.com/agrc/ad-vantage/issues/72)
+* show missing event value validation on non-highlighted rows ([5d42f0a](https://github.com/agrc/ad-vantage/commit/5d42f0a463c0dcce35dc8b32f60d4ce3e28cb60f)), refs [#62](https://github.com/agrc/ad-vantage/issues/62)
+* switch feedback link to point to ServiceNow ([d46b60f](https://github.com/agrc/ad-vantage/commit/d46b60f5a1642582cb25b359472577d9fd46d854))
+* use a unique production service worker entrypoint ([69ec6ae](https://github.com/agrc/ad-vantage/commit/69ec6ae5e2d19af0ebe3f3dbdb231790587a1cd4))
+
 ## [1.3.14](https://github.com/agrc/ad-vantage/compare/v1.3.13...v1.3.14) (2026-08-10)
 
 
