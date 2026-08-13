@@ -14,7 +14,7 @@ function createGrid(): {
     </tr></thead>
     <tbody><tr>
       <td>Task</td>
-      <td data-cell="event"><input value=""></td>
+      <td data-cell="event"><input value=""><span>Search and Select Event</span></td>
       <td data-cell="mon"><input value="1:10"></td>
     </tr></tbody>
   `;
@@ -36,6 +36,27 @@ describe("time warnings", () => {
       "adv-time-warn",
     );
     expect(grid.querySelector('[data-cell="event"]')?.classList).toContain(
+      "adv-missing-event-warn",
+    );
+  });
+
+  it("warns when an unselected Event cell renders as a dash", () => {
+    const { grid, headerRow } = createGrid();
+    const eventCell = grid.querySelector<HTMLElement>('[data-cell="event"]')!;
+    eventCell.innerHTML = "<span>-</span>";
+
+    applyTimeWarnings(grid, headerRow);
+
+    expect(eventCell.classList).toContain("adv-missing-event-warn");
+  });
+
+  it("uses text content for a read-only Event cell", () => {
+    const { grid, headerRow } = createGrid();
+    grid.querySelector('[data-cell="event"]')!.innerHTML = "<span>TW</span>";
+
+    applyTimeWarnings(grid, headerRow);
+
+    expect(grid.querySelector('[data-cell="event"]')?.classList).not.toContain(
       "adv-missing-event-warn",
     );
   });

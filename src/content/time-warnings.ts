@@ -169,6 +169,6 @@ function getCellDisplayValue(cell: HTMLElement): string {
   const input = cell.querySelector<HTMLInputElement | HTMLTextAreaElement>(
     "input, textarea",
   );
-  if (input?.value) return input.value.trim();
+  if (input) return input.value.trim();
   return cell.textContent?.trim() ?? "";
 }

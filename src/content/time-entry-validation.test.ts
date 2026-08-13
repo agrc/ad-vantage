@@ -31,7 +31,15 @@ describe("shouldWarnForMissingEvent", () => {
     expect(shouldWarnForMissingEvent("TW", ["01:00"])).toBe(false);
   });
 
+  it("warns when Vantage renders a missing Event as a dash", () => {
+    expect(shouldWarnForMissingEvent(" -", ["00:50"])).toBe(true);
+  });
+
   it("does not warn for empty Event on an unused row", () => {
     expect(shouldWarnForMissingEvent("", ["", "00:00", "-"])).toBe(false);
+  });
+
+  it("does not warn for a dash Event on an unused row", () => {
+    expect(shouldWarnForMissingEvent("-", ["", "00:00", "-"])).toBe(false);
   });
 });
