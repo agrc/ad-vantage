@@ -13,7 +13,10 @@ export function shouldWarnForMissingEvent(
   eventValue: string,
   dayValues: string[],
 ): boolean {
+  const normalizedEventValue = eventValue.trim();
+
   return (
-    eventValue.trim() === "" && dayValues.some(hasEnteredTimeValue)
+    (normalizedEventValue === "" || normalizedEventValue === "-") &&
+    dayValues.some(hasEnteredTimeValue)
   );
 }
