@@ -3,6 +3,7 @@ import {
   applyColumnVisibility,
   applyFrozenColumns,
   getPrimaryAndSummaryBodyRows,
+  prepareGridForFrozenColumns,
 } from "./column-layout";
 
 function createGrid(): HTMLTableElement {
@@ -80,17 +81,41 @@ describe("applyFrozenColumns", () => {
         value: () => ({ width: index === 0 ? 80 : 40 }),
       });
     });
+    headers[1].style.backgroundColor = "rgba(204, 204, 204, 0.5)";
+    grid.style.backgroundColor = "rgb(238, 238, 238)";
 
     applyFrozenColumns(grid, headerRow, ["DLY_ACTV_CD", "Mon"]);
+    expect((headers[1] as HTMLElement).style.backgroundColor).toBe(
+      "rgb(238, 238, 238)",
+    );
 
     expect((headers[0] as HTMLElement).style.left).toBe("0px");
     expect((headers[1] as HTMLElement).style.left).toBe("80px");
+    expect((headers[1] as HTMLElement).style.zIndex).toBe("10");
+    expect(
+      (headers[1] as HTMLElement).style.getPropertyPriority("background-color"),
+    ).toBe("important");
     expect(
       (grid.querySelector('[data-row="entry"]')?.children[1] as HTMLElement)
         .style.left,
     ).toBe("80px");
     expect(
+      (grid.querySelector('[data-row="entry"]')?.children[1] as HTMLElement)
+        .style.zIndex,
+    ).toBe("1");
+    expect(
       grid.querySelector('[data-row="detail"] td')?.classList,
     ).not.toContain("adv-frozen");
+
+    applyFrozenColumns(grid, headerRow, []);
+  });
+
+  it("creates an isolated stacking context for frozen columns", () => {
+    const grid = createGrid();
+
+    prepareGridForFrozenColumns(grid);
+
+    expect(grid.style.position).toBe("relative");
+    expect(grid.style.isolation).toBe("isolate");
   });
 });
