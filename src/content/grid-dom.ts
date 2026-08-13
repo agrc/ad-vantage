@@ -1,5 +1,6 @@
 const MODAL_ANCESTOR_SELECTOR =
   '[role="dialog"], [role="alertdialog"], [aria-modal="true"]';
+const DAILY_ACTIVITY_HEADER_SELECTOR = '[data-qa="DLY_ACTV_CD"]';
 
 export function getColumnHeaders(headerRow: HTMLElement): HTMLElement[] {
   return Array.from(headerRow.querySelectorAll<HTMLElement>("th"));
@@ -37,6 +38,10 @@ export function getStickyHeaderRow(grid: HTMLElement): HTMLElement | null {
 export function getEnhanceableGrids(
   root: ParentNode = document,
 ): HTMLElement[] {
+  return getGrids(root);
+}
+
+function getGrids(root: ParentNode): HTMLElement[] {
   const candidates = Array.from(
     root.querySelectorAll<HTMLElement>(
       'div[role="grid"], table[data-qa="tableGrid"], table',
@@ -58,6 +63,12 @@ export function getEnhanceableGrids(
 
 export function isEnhanceableGrid(grid: HTMLElement): boolean {
   return !grid.closest(MODAL_ANCESTOR_SELECTOR);
+}
+
+export function isDailyActivityGrid(grid: HTMLElement): boolean {
+  return Boolean(
+    getMainHeaderRow(grid)?.querySelector(DAILY_ACTIVITY_HEADER_SELECTOR),
+  );
 }
 
 export function getColumnKey(th: HTMLElement): string {

@@ -42,6 +42,7 @@ export function createPaginationAutomationController(options?: {
   const now = options?.now ?? Date.now;
   const recentClicks = new Map<string, { count: number; time: number }>();
   const lastEligibleSignatures = new Map<string, string | null>();
+  const gridInstances = new Map<string, HTMLElement>();
 
   return {
     sync(grid) {
@@ -66,6 +67,11 @@ export function createPaginationAutomationController(options?: {
         return;
 
       const scopeKey = getPaginationScopeKey(grid, buttons);
+      if (gridInstances.get(scopeKey) !== grid) {
+        gridInstances.set(scopeKey, grid);
+        lastEligibleSignatures.delete(scopeKey);
+        recentClicks.delete(scopeKey);
+      }
       const currentOption = pageOptions.find(({ button }) =>
         isPaginationOptionCurrent(button),
       );
@@ -197,8 +203,9 @@ function getPaginationScopeKey(
 }
 
 function isPaginationOptionCurrent(button: HTMLButtonElement): boolean {
+  const ariaCurrent = button.getAttribute("aria-current");
   return (
-    button.getAttribute("aria-current") === "true" ||
+    (ariaCurrent !== null && ariaCurrent !== "false") ||
     button.getAttribute("aria-pressed") === "true"
   );
 }
