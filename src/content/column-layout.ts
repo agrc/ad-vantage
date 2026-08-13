@@ -156,8 +156,13 @@ function setColumnFrozen(
 
     cell.style.position = "sticky";
     cell.style.left = `${left}px`;
-    cell.style.zIndex = cell.tagName === "TH" ? "3" : "1";
-    cell.style.backgroundColor = getStickyCellBackground(cell, row, grid);
+    cell.style.zIndex = cell.tagName === "TH" ? "10" : "1";
+    // Vantage hover and sort styles can reveal its duplicate hidden header layer.
+    cell.style.setProperty(
+      "background-color",
+      getStickyCellBackground(cell, row, grid),
+      "important",
+    );
     cell.classList.add("adv-frozen");
   });
 }
@@ -170,11 +175,21 @@ function getStickyCellBackground(
   for (const element of [cell, row, grid, grid.ownerDocument.body]) {
     const backgroundColor =
       grid.ownerDocument.defaultView?.getComputedStyle(element).backgroundColor;
-    if (backgroundColor && backgroundColor !== "rgba(0, 0, 0, 0)") {
+    if (backgroundColor && isOpaqueBackgroundColor(backgroundColor)) {
       return backgroundColor;
     }
   }
   return "#fff";
+}
+
+function isOpaqueBackgroundColor(backgroundColor: string | undefined): boolean {
+  if (!backgroundColor || backgroundColor === "rgba(0, 0, 0, 0)") return false;
+  if (!backgroundColor.startsWith("rgba(")) return true;
+
+  const alpha = Number.parseFloat(
+    backgroundColor.slice(backgroundColor.lastIndexOf(",") + 1),
+  );
+  return alpha >= 1;
 }
 
 function applyHiddenColumnsToRow(
