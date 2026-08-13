@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { DESCRIPTION_COL_KEY } from "../shared/constants";
-import { syncDescriptionColumns } from "./description-column";
+import {
+  syncDescriptionColumns,
+  syncStickyHeaderColumnWidths,
+} from "./description-column";
 
 function createGrid(): {
   grid: HTMLTableElement;
@@ -66,5 +69,24 @@ describe("syncDescriptionColumns", () => {
     const summaryCells = grid.querySelector('[data-row="summary"]')?.children;
     expect(summaryCells).toHaveLength(3);
     expect(summaryCells?.[1].getAttribute("data-qa")).toBe(DESCRIPTION_COL_KEY);
+  });
+
+  it("matches the sticky Description header to the current grid width", () => {
+    const sourceRow = document.createElement("tr");
+    const stickyRow = document.createElement("tr");
+    const sourceHeader = document.createElement("th");
+    const stickyHeader = document.createElement("th");
+    sourceHeader.setAttribute("data-qa", DESCRIPTION_COL_KEY);
+    stickyHeader.setAttribute("data-qa", DESCRIPTION_COL_KEY);
+    sourceRow.appendChild(sourceHeader);
+    stickyRow.appendChild(stickyHeader);
+    vi.spyOn(sourceHeader, "getBoundingClientRect").mockReturnValue({
+      width: 119,
+    } as DOMRect);
+
+    syncStickyHeaderColumnWidths(sourceRow, stickyRow);
+
+    expect(stickyHeader.style.width).toBe("119px");
+    expect(stickyHeader.style.maxWidth).toBe("119px");
   });
 });
