@@ -123,14 +123,19 @@ Bundles the separately publishable pre-release extension into `dist-pre-release`
 
 #### Pre-release Tester Workflow
 
+The pre-release version of ad-vantage has been published as a [separate Chrome extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) available only to members of this Google Group: `ad-vantage-pre-release@utah.gov`. The pre-release version's color scheme is set to orange to help eliminate confusion.
+
 The pre-release extension can be installed alongside the production extension. To avoid both versions modifying the same Vantage page, keep only one enabled at a time:
 
-1. Install the [pre-release extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) from the Chrome Web Store. You must be a member of `ad-vantage-pre-release@utah.gov` Google Group to access it.
+1. Install the [pre-release extension](https://chromewebstore.google.com/detail/ad-vantage-pre-release/hjfheegfeninlddodpecjllfjeimmikd) from the Chrome Web Store.
 2. Open `chrome://extensions/`, find **ad-vantage**, and turn its toggle off before testing the pre-release version.
 3. Verify that **ad-vantage (Pre-release)** is enabled, then reload any open Vantage tabs before testing.
 4. To switch back to production, open `chrome://extensions/`, turn **ad-vantage (Pre-release)** off, turn **ad-vantage** on, and reload Vantage tabs.
 
 Do not uninstall either extension to switch versions. Turning off the version you are not testing preserves its settings and lets you move between production and pre-release builds quickly.
+
+>[!NOTE]
+> The pre-release extension is pointed at the test ServiceNow instance. This means that task descriptions may be out-of-date from the production ServiceNow instance. I don't have any control over when they update SN data in test.
 
 ### ServiceNow Integration
 
