@@ -81,7 +81,7 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
    pnpm dev
    ```
 
-   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
+   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. The generated manifest uses a Chrome-compatible numeric version, even when the source version includes an `-rc` suffix. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
 
 4. **Launch the dedicated debug browser:**
 

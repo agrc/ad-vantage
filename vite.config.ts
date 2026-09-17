@@ -14,10 +14,7 @@ export default defineConfig(({ command, mode }) => {
   const extensionKey = environment.VITE_EXTENSION_KEY?.trim();
   const isPreReleaseBuild = mode === "pre-release";
   const usesPreReleaseBranding = mode === "development" || isPreReleaseBuild;
-  const extensionVersion = getExtensionVersion(
-    manifest.version,
-    isPreReleaseBuild,
-  );
+  const extensionVersion = getExtensionVersion(manifest.version);
   const iconDirectory = usesPreReleaseBranding ? "icons/pre-release" : "icons";
 
   return {
@@ -76,14 +73,7 @@ function validateExtensionName(value: string | undefined): string {
   return extensionName;
 }
 
-function getExtensionVersion(
-  version: string,
-  isPreReleaseBuild: boolean,
-): string {
-  if (!isPreReleaseBuild) {
-    return version;
-  }
-
+function getExtensionVersion(version: string): string {
   const normalizedVersion = version.match(/^(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$/);
   if (!normalizedVersion) {
     return version;
