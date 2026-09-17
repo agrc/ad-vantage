@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.15-rc.2](https://github.com/agrc/ad-vantage/compare/v1.3.15-rc.1...v1.3.15-rc.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* layout stabilization refactor ([d74c0e7](https://github.com/agrc/ad-vantage/commit/d74c0e72a5532418705706546d27f7d86255754c)), refs [#76](https://github.com/agrc/ad-vantage/issues/76)
+
 ## [1.3.15-rc.1](https://github.com/agrc/ad-vantage/compare/v1.3.14...v1.3.15-rc.1) (2026-08-13)
 
 
