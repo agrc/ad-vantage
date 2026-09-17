@@ -16,8 +16,10 @@ import { createPaginationAutomationController } from "./pagination";
 import {
   applyColumnVisibility,
   applyFrozenColumns,
+  clearFrozenColumns,
   prepareGridForFrozenColumns,
 } from "./column-layout";
+import { getColumnLayout } from "./grid-alignment";
 import {
   clearLegacyBodyColumnWidths,
   syncDescriptionColumns,
@@ -34,6 +36,7 @@ import {
   isDailyActivityGrid,
   isEnhanceableGrid,
 } from "./grid-dom";
+import { createLayoutRefreshController } from "./layout-refresh";
 import { createUpdateTimesheetShortcutController } from "./page-actions";
 import { applyTimeWarnings, ensureTimeWarningStyles } from "./time-warnings";
 
@@ -48,6 +51,7 @@ const warnedMissingTasks = new Set<string>();
 const paginationAutomation = createPaginationAutomationController();
 const updateTimesheetShortcut = createUpdateTimesheetShortcutController();
 const autocomplete = createAutocompleteController(document, applyEnhancements);
+const layoutRefresh = createLayoutRefreshController(applyEnhancements);
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
@@ -178,9 +182,16 @@ function enhanceGrid(grid: HTMLElement) {
   }
   if (mainHeaderRow.querySelector(`th[data-qa="${DAILY_ACTIVITY_QA}"]`)) {
     clearLegacyBodyColumnWidths(grid, mainHeaderRow);
-    syncStickyHeaderColumnWidths(mainHeaderRow, stickyHeaderRow);
+  }
+  clearFrozenColumns(grid);
+  if (stickyHeaderRow) {
+    clearFrozenColumns(stickyHeaderRow.closest("table")!);
   }
   applyColumnVisibility(grid, mainHeaderRow, currentPrefs.hidden);
+  const columnLayout = getColumnLayout(mainHeaderRow);
+  if (mainHeaderRow.querySelector(`th[data-qa="${DAILY_ACTIVITY_QA}"]`)) {
+    syncStickyHeaderColumnWidths(columnLayout, stickyHeaderRow);
+  }
   if (stickyHeaderRow) {
     applyColumnVisibility(
       stickyHeaderRow.closest("table")!,
@@ -188,14 +199,21 @@ function enhanceGrid(grid: HTMLElement) {
       currentPrefs.hidden,
     );
   }
-  applyFrozenColumns(grid, mainHeaderRow, currentPrefs.frozen);
+  applyFrozenColumns(
+    grid,
+    mainHeaderRow,
+    currentPrefs.frozen,
+    columnLayout,
+  );
   if (stickyHeaderRow) {
     applyFrozenColumns(
       stickyHeaderRow.closest("table")!,
       stickyHeaderRow,
       currentPrefs.frozen,
+      columnLayout,
     );
   }
+  layoutRefresh.sync([mainHeaderRow, ...getColumnHeaders(mainHeaderRow)]);
   autocomplete.bind(grid, mainHeaderRow, lookupEntries);
   applyTimeWarnings(grid, mainHeaderRow);
 }

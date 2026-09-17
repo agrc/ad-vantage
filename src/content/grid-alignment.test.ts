@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { applyColumnWidth, getRowCell } from "./grid-alignment";
+import { describe, expect, it, vi } from "vitest";
+import {
+  applyColumnWidth,
+  getColumnLayout,
+  getRowCell,
+} from "./grid-alignment";
 
 function createRow(markup: string): HTMLTableRowElement {
   const table = document.createElement("table");
@@ -76,5 +80,54 @@ describe("applyColumnWidth", () => {
     expect(cell.style.width).toBe("");
     expect(cell.style.minWidth).toBe("");
     expect(cell.style.maxWidth).toBe("");
+  });
+});
+
+describe("getColumnLayout", () => {
+  it("captures widths and offsets after the native header reflows", () => {
+    const row = document.createElement("tr");
+    const firstHeader = document.createElement("th");
+    const secondHeader = document.createElement("th");
+    row.append(firstHeader, secondHeader);
+    vi.spyOn(row, "getBoundingClientRect").mockReturnValue({
+      left: 20,
+    } as DOMRect);
+    vi.spyOn(firstHeader, "getBoundingClientRect").mockReturnValue({
+      left: 20,
+      width: 96,
+    } as DOMRect);
+    vi.spyOn(secondHeader, "getBoundingClientRect").mockReturnValue({
+      left: 116,
+      width: 64,
+    } as DOMRect);
+
+    expect(getColumnLayout(row)).toEqual([
+      { index: 1, left: 0, width: 96 },
+      { index: 2, left: 96, width: 64 },
+    ]);
+  });
+
+  it("uses physical indices when Vantage adds a structural header cell", () => {
+    const row = document.createElement("tr");
+    const firstHeader = document.createElement("th");
+    const structuralCell = document.createElement("td");
+    const secondHeader = document.createElement("th");
+    row.append(firstHeader, structuralCell, secondHeader);
+    vi.spyOn(row, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+    } as DOMRect);
+    vi.spyOn(firstHeader, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      width: 96,
+    } as DOMRect);
+    vi.spyOn(secondHeader, "getBoundingClientRect").mockReturnValue({
+      left: 140,
+      width: 64,
+    } as DOMRect);
+
+    expect(getColumnLayout(row)).toEqual([
+      { index: 1, left: 0, width: 96 },
+      { index: 3, left: 140, width: 64 },
+    ]);
   });
 });

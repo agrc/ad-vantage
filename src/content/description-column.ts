@@ -3,7 +3,11 @@ import {
   DESCRIPTION_COL_KEY,
   DESCRIPTION_COL_LABEL,
 } from "../shared/constants";
-import { applyColumnWidth, getRowCell } from "./grid-alignment";
+import {
+  applyColumnWidth,
+  type ColumnLayout,
+  getRowCell,
+} from "./grid-alignment";
 import { getColumnHeaders, getColumnIndex, getMainHeaderRow } from "./grid-dom";
 import { getPrimaryAndSummaryBodyRows, isSummaryRow } from "./column-layout";
 
@@ -49,8 +53,16 @@ export function syncDescriptionHeaderCell(
     descriptionHeader.setAttribute("role", "columnheader");
     descriptionHeader.setAttribute("scope", "col");
   }
+  const width = descriptionHeader.style.width;
+  const minWidth = descriptionHeader.style.minWidth;
+  const maxWidth = descriptionHeader.style.maxWidth;
   descriptionHeader.style.cssText =
     "padding: 1px; white-space: nowrap; font-weight: bold; vertical-align: middle;";
+  if (width) descriptionHeader.style.setProperty("width", width, "important");
+  if (minWidth)
+    descriptionHeader.style.setProperty("min-width", minWidth, "important");
+  if (maxWidth)
+    descriptionHeader.style.setProperty("max-width", maxWidth, "important");
   descriptionHeader.replaceChildren();
 
   const titleWrapper = root.createElement("div");
@@ -93,18 +105,15 @@ export function clearLegacyBodyColumnWidths(
 }
 
 export function syncStickyHeaderColumnWidths(
-  sourceHeaderRow: HTMLElement,
+  columnLayout: readonly ColumnLayout[],
   stickyHeaderRow: HTMLElement | null,
 ) {
   if (!stickyHeaderRow) return;
   const stickyHeaders = getColumnHeaders(stickyHeaderRow);
-  getColumnHeaders(sourceHeaderRow).forEach((sourceHeader, index) => {
+  columnLayout.forEach((layout, index) => {
     const stickyHeader = stickyHeaders[index];
     if (stickyHeader) {
-      applyColumnWidth(
-        stickyHeader,
-        sourceHeader.getBoundingClientRect().width,
-      );
+      applyColumnWidth(stickyHeader, layout.width);
     }
   });
 }

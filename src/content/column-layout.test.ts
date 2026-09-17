@@ -5,6 +5,7 @@ import {
   getPrimaryAndSummaryBodyRows,
   prepareGridForFrozenColumns,
 } from "./column-layout";
+import { getColumnLayout } from "./grid-alignment";
 
 function createGrid(): HTMLTableElement {
   const table = document.createElement("table");
@@ -78,13 +79,24 @@ describe("applyFrozenColumns", () => {
     const headers = Array.from(headerRow.children) as HTMLElement[];
     headers.forEach((header, index) => {
       Object.defineProperty(header, "getBoundingClientRect", {
-        value: () => ({ width: index === 0 ? 80 : 40 }),
+        value: () => ({
+          width: index === 0 ? 80 : 40,
+          left: index === 0 ? 0 : 80 + (index - 1) * 40,
+        }),
       });
+    });
+    Object.defineProperty(headerRow, "getBoundingClientRect", {
+      value: () => ({ left: 0 }),
     });
     headers[1].style.backgroundColor = "rgba(204, 204, 204, 0.5)";
     grid.style.backgroundColor = "rgb(238, 238, 238)";
 
-    applyFrozenColumns(grid, headerRow, ["DLY_ACTV_CD", "Mon"]);
+    applyFrozenColumns(
+      grid,
+      headerRow,
+      ["DLY_ACTV_CD", "Mon"],
+      getColumnLayout(headerRow),
+    );
     expect((headers[1] as HTMLElement).style.backgroundColor).toBe(
       "rgb(238, 238, 238)",
     );
@@ -107,7 +119,7 @@ describe("applyFrozenColumns", () => {
       grid.querySelector('[data-row="detail"] td')?.classList,
     ).not.toContain("adv-frozen");
 
-    applyFrozenColumns(grid, headerRow, []);
+    applyFrozenColumns(grid, headerRow, [], getColumnLayout(headerRow));
   });
 
   it("creates an isolated stacking context for frozen columns", () => {
@@ -117,5 +129,40 @@ describe("applyFrozenColumns", () => {
 
     expect(grid.style.position).toBe("relative");
     expect(grid.style.isolation).toBe("isolate");
+  });
+
+  it("clears prior frozen offsets before applying the current layout", () => {
+    const grid = createGrid();
+    const headerRow = grid.querySelector<HTMLElement>("thead tr")!;
+    const header = headerRow.children[0] as HTMLElement;
+    header.classList.add("adv-frozen");
+    header.style.left = "240px";
+    header.style.position = "sticky";
+
+    applyFrozenColumns(grid, headerRow, [], []);
+
+    expect(header.classList).not.toContain("adv-frozen");
+    expect(header.style.left).toBe("");
+    expect(header.style.position).toBe("");
+  });
+
+  it("uses only frozen column widths when calculating offsets", () => {
+    const grid = createGrid();
+    const headerRow = grid.querySelector<HTMLElement>("thead tr")!;
+    const headers = Array.from(headerRow.children) as HTMLElement[];
+
+    applyFrozenColumns(
+      grid,
+      headerRow,
+      ["DLY_ACTV_CD", "Tue"],
+      [
+        { index: 1, width: 80, left: 0 },
+        { index: 2, width: 40, left: 80 },
+        { index: 3, width: 40, left: 120 },
+      ],
+    );
+
+    expect(headers[0].style.left).toBe("0px");
+    expect(headers[2].style.left).toBe("80px");
   });
 });

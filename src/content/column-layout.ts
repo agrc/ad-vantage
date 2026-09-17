@@ -1,4 +1,8 @@
-import { getCellColumnSpan, getRowCell } from "./grid-alignment";
+import {
+  type ColumnLayout,
+  getCellColumnSpan,
+  getRowCell,
+} from "./grid-alignment";
 import { getColumnHeaders, getColumnIndex, getColumnKey } from "./grid-dom";
 
 const HIDDEN_COLSPAN_ATTR = "data-adv-original-colspan";
@@ -31,7 +35,32 @@ export function applyFrozenColumns(
   grid: HTMLElement,
   headerRow: HTMLElement,
   frozenColumnKeys: readonly string[],
+  columnLayout: readonly ColumnLayout[],
 ) {
+  clearFrozenColumns(grid);
+  if (frozenColumnKeys.length === 0) return;
+
+  const headers = getColumnHeaders(headerRow);
+  const headerColumnCount = headers.length;
+  let frozenLeft = 0;
+  headers.forEach((header) => {
+    if (!frozenColumnKeys.includes(getColumnKey(header))) return;
+
+    const layout = columnLayout.find(
+      (candidate) => candidate.index === getColumnIndex(header),
+    );
+    if (!layout) return;
+    setColumnFrozen(
+      grid,
+      getColumnIndex(header),
+      frozenLeft,
+      headerColumnCount,
+    );
+    frozenLeft += layout.width;
+  });
+}
+
+export function clearFrozenColumns(grid: HTMLElement) {
   grid.querySelectorAll<HTMLElement>(".adv-frozen").forEach((cell) => {
     for (const property of [
       "position",
@@ -44,23 +73,6 @@ export function applyFrozenColumns(
       cell.style.removeProperty(property);
     }
     cell.classList.remove("adv-frozen");
-  });
-  if (frozenColumnKeys.length === 0) return;
-
-  const headers = getColumnHeaders(headerRow);
-  const headerColumnCount = headers.length;
-  let accumulatedWidth = 0;
-  headers.forEach((header) => {
-    if (!frozenColumnKeys.includes(getColumnKey(header))) return;
-
-    const width = header.getBoundingClientRect().width;
-    setColumnFrozen(
-      grid,
-      getColumnIndex(header),
-      accumulatedWidth,
-      headerColumnCount,
-    );
-    accumulatedWidth += width;
   });
 }
 

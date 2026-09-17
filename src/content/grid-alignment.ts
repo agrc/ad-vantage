@@ -4,6 +4,27 @@ export function getCellColumnSpan(cell: HTMLElement): number {
     : 1;
 }
 
+export type ColumnLayout = {
+  index: number;
+  width: number;
+  left: number;
+};
+
+export function getColumnLayout(headerRow: HTMLElement): ColumnLayout[] {
+  const headerLeft = headerRow.getBoundingClientRect().left;
+
+  return Array.from(headerRow.querySelectorAll<HTMLElement>("th")).map(
+    (header) => {
+      const bounds = header.getBoundingClientRect();
+      return {
+        index: Array.from(headerRow.children).indexOf(header) + 1,
+        width: bounds.width,
+        left: bounds.left - headerLeft,
+      };
+    },
+  );
+}
+
 export function getRowCell(
   row: HTMLElement,
   columnIndex: number,
