@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DESCRIPTION_COL_KEY } from "../shared/constants";
 import {
   syncDescriptionColumns,
+  syncDescriptionHeaderCell,
   syncStickyHeaderColumnWidths,
 } from "./description-column";
 
@@ -84,9 +85,30 @@ describe("syncDescriptionColumns", () => {
       width: 119,
     } as DOMRect);
 
-    syncStickyHeaderColumnWidths(sourceRow, stickyRow);
+    syncStickyHeaderColumnWidths(
+      [{ index: 1, width: 119, left: 0 }],
+      stickyRow,
+    );
 
     expect(stickyHeader.style.width).toBe("119px");
     expect(stickyHeader.style.maxWidth).toBe("119px");
+  });
+
+  it("preserves existing sticky Description width constraints", () => {
+    const row = document.createElement("tr");
+    const activityHeader = document.createElement("th");
+    activityHeader.setAttribute("data-qa", "DLY_ACTV_CD");
+    const descriptionHeader = document.createElement("th");
+    descriptionHeader.setAttribute("data-qa", DESCRIPTION_COL_KEY);
+    descriptionHeader.style.width = "180px";
+    descriptionHeader.style.minWidth = "0";
+    descriptionHeader.style.maxWidth = "180px";
+    row.append(activityHeader, descriptionHeader);
+
+    syncDescriptionHeaderCell(row);
+
+    expect(descriptionHeader.style.width).toBe("180px");
+    expect(descriptionHeader.style.minWidth).toBe("0px");
+    expect(descriptionHeader.style.maxWidth).toBe("180px");
   });
 });
