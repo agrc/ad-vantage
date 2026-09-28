@@ -36,6 +36,7 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 2. The extension activates automatically — columns are frozen and your saved visibility preferences are applied.
 3. **Click the extension icon** in your Chrome toolbar to open the popup, where you can:
    - Show or hide individual columns.
+   - Show or hide the Scheduled Hours summary row.
    - Fetch the current task descriptions from ServiceNow.
 4. On `Timesheet (TIMEI)` with the `Daily Activity` grid visible, use the added `Update Timesheet` button beside the lower three-dot menu to run the same native update action without opening the menu first.
 5. When the Daily Activity tab grid shows inline pagination options such as `50` or `100`, the extension automatically switches to the highest enabled option only after it detects a verified fallback to `20`, and it will not repeat that native click just because the page emitted more generic mutation noise.

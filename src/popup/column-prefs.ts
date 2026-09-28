@@ -1,24 +1,17 @@
 import { DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY } from "../shared/constants";
 import type { ColumnPrefs } from "../shared/storage";
+import {
+  createPrefsWriter,
+  setVisibility,
+  type PrefsWriter,
+} from "./visibility-prefs";
 
-export interface ColumnPrefsWriter {
-  write: (prefs: ColumnPrefs) => Promise<void>;
-}
+export type ColumnPrefsWriter = PrefsWriter<ColumnPrefs>;
 
 export function createColumnPrefsWriter(
   persist: (prefs: ColumnPrefs) => Promise<void>,
 ): ColumnPrefsWriter {
-  let pendingWrite = Promise.resolve();
-
-  return {
-    write(prefs) {
-      const write = pendingWrite
-        .catch(() => undefined)
-        .then(() => persist(prefs));
-      pendingWrite = write;
-      return write;
-    },
-  };
+  return createPrefsWriter(persist);
 }
 
 export function setColumnVisibility(
@@ -26,13 +19,7 @@ export function setColumnVisibility(
   key: string,
   visible: boolean,
 ): ColumnPrefs {
-  const hidden = visible
-    ? prefs.hidden.filter((hiddenKey) => hiddenKey !== key)
-    : prefs.hidden.includes(key)
-      ? [...prefs.hidden]
-      : [...prefs.hidden, key];
-
-  return { hidden, frozen: [...prefs.frozen] };
+  return setVisibility(prefs, key, visible);
 }
 
 export function setColumnFrozen(
