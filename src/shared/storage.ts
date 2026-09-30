@@ -4,10 +4,15 @@ import {
   LEGACY_DAILY_ACTIVITY_QA,
 } from "./constants";
 
-export interface ColumnPrefs {
+export interface VisibilityPrefs {
   hidden: string[];
+}
+
+export interface ColumnPrefs extends VisibilityPrefs {
   frozen: string[];
 }
+
+export type RowPrefs = VisibilityPrefs;
 
 export interface LookupSearchEntryRecord {
   taskCode: string;
@@ -33,6 +38,7 @@ interface StoredColumnPrefs extends ColumnPrefs {
 }
 
 const PREFS_KEY = "columnPrefs";
+const ROW_PREFS_KEY = "rowPrefs";
 const PREFS_SCHEMA_VERSION = 3;
 const LOOKUP_DATA_KEY = "lookupData";
 const AUTH_TOKEN_KEY = "serviceNowAuth";
@@ -40,6 +46,10 @@ const AUTH_TOKEN_KEY = "serviceNowAuth";
 const DEFAULT_COLUMN_PREFS: ColumnPrefs = {
   hidden: [],
   frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+};
+
+const DEFAULT_ROW_PREFS: RowPrefs = {
+  hidden: [],
 };
 
 function getDefaultColumnPrefs(): ColumnPrefs {
@@ -72,6 +82,24 @@ function normalizeColumnPrefs(
   }
 
   return { hidden, frozen };
+}
+
+function normalizeRowPrefs(
+  prefs: Partial<RowPrefs> | null | undefined,
+): RowPrefs {
+  const hidden = Array.isArray(prefs?.hidden)
+    ? normalizeRowKeys(prefs.hidden)
+    : [];
+
+  return { hidden };
+}
+
+function normalizeRowKeys(keys: unknown[]): string[] {
+  return [
+    ...new Set(
+      keys.filter((key): key is string => typeof key === "string"),
+    ),
+  ];
 }
 
 function normalizeColumnKeys(keys: unknown[]): string[] {
@@ -152,11 +180,41 @@ export function onColumnPrefsChanged(
   });
 }
 
+export async function getRowPrefs(): Promise<RowPrefs> {
+  const storedPrefs = await getStorageValue<RowPrefs>(
+    chrome.storage.sync,
+    ROW_PREFS_KEY,
+  );
+
+  return normalizeRowPrefs(storedPrefs ?? DEFAULT_ROW_PREFS);
+}
+
+export async function setRowPrefs(prefs: RowPrefs): Promise<void> {
+  await setStorageValue(
+    chrome.storage.sync,
+    ROW_PREFS_KEY,
+    normalizeRowPrefs(prefs),
+  );
+}
+
+export function onRowPrefsChanged(callback: (prefs: RowPrefs) => void): void {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && ROW_PREFS_KEY in changes) {
+      const nextPrefs = changes[ROW_PREFS_KEY].newValue as
+        | RowPrefs
+        | undefined;
+
+      callback(normalizeRowPrefs(nextPrefs ?? DEFAULT_ROW_PREFS));
+    }
+  });
+}
+
 export async function getLookupData(): Promise<LookupDataRecord | null> {
   const lookupData = await getStorageValue<unknown>(
     chrome.storage.local,
     LOOKUP_DATA_KEY,
   );
+
   return isLookupDataRecord(lookupData) ? cloneLookupData(lookupData) : null;
 }
 
@@ -172,6 +230,7 @@ export function onLookupDataChanged(
       const nextLookupData = changes[LOOKUP_DATA_KEY].newValue as
         | LookupDataRecord
         | undefined;
+
       callback(nextLookupData ?? null);
     }
   });
@@ -182,6 +241,7 @@ export async function getAuthToken(): Promise<AuthTokenRecord | null> {
     chrome.storage.session,
     AUTH_TOKEN_KEY,
   );
+
   return isAuthTokenRecord(token) ? { ...token } : null;
 }
 
@@ -196,6 +256,7 @@ export async function clearAuthToken(): Promise<void> {
 export async function resetExtensionData(): Promise<void> {
   await Promise.all([
     removeStorageValue(chrome.storage.sync, PREFS_KEY),
+    removeStorageValue(chrome.storage.sync, ROW_PREFS_KEY),
     removeStorageValue(chrome.storage.local, LOOKUP_DATA_KEY),
     removeStorageValue(chrome.storage.session, AUTH_TOKEN_KEY),
   ]);

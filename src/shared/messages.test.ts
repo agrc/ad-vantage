@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   GET_COLUMNS_MESSAGE_TYPE,
+  GET_ROWS_MESSAGE_TYPE,
   isGetColumnsRequest,
   isGetColumnsResponse,
+  isGetRowsRequest,
+  isGetRowsResponse,
   isServiceNowSyncRequest,
   SERVICE_NOW_SYNC_MESSAGE_TYPE,
 } from "./messages";
@@ -10,10 +13,12 @@ import {
 describe("runtime message guards", () => {
   it("accepts only recognized request shapes", () => {
     expect(isGetColumnsRequest({ type: GET_COLUMNS_MESSAGE_TYPE })).toBe(true);
+    expect(isGetRowsRequest({ type: GET_ROWS_MESSAGE_TYPE })).toBe(true);
     expect(
       isServiceNowSyncRequest({ type: SERVICE_NOW_SYNC_MESSAGE_TYPE }),
     ).toBe(true);
     expect(isGetColumnsRequest({ type: "unknown" })).toBe(false);
+    expect(isGetRowsRequest({ type: "unknown" })).toBe(false);
     expect(isServiceNowSyncRequest(null)).toBe(false);
   });
 
@@ -27,5 +32,15 @@ describe("runtime message guards", () => {
       false,
     );
     expect(isGetColumnsResponse({ columns: "not-an-array" })).toBe(false);
+  });
+
+  it("validates every returned row", () => {
+    expect(
+      isGetRowsResponse({
+        rows: [{ label: "Scheduled Hours" }],
+      }),
+    ).toBe(true);
+    expect(isGetRowsResponse({ rows: [{}] })).toBe(false);
+    expect(isGetRowsResponse({ rows: "not-an-array" })).toBe(false);
   });
 });

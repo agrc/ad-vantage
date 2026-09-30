@@ -4,12 +4,15 @@ import {
   getAuthToken,
   getColumnPrefs,
   getLookupData,
+  getRowPrefs,
   resetExtensionData,
   setAuthToken,
   setColumnPrefs,
   setLookupData,
+  setRowPrefs,
   type AuthTokenRecord,
   type LookupDataRecord,
+  type RowPrefs,
 } from "./storage";
 
 const authToken: AuthTokenRecord = {
@@ -127,6 +130,23 @@ describe("storage areas", () => {
       expect.any(Function),
     );
   });
+
+  it("keeps row preferences in sync storage", async () => {
+    const prefs: RowPrefs = { hidden: ["Scheduled Hours"] };
+    sync.get.mockImplementation((_key, callback) => {
+      callback({ rowPrefs: prefs });
+    });
+    sync.set.mockImplementation((_values, callback) => callback?.());
+
+    await expect(getRowPrefs()).resolves.toEqual(prefs);
+    await setRowPrefs(prefs);
+
+    expect(sync.get).toHaveBeenCalledWith("rowPrefs", expect.any(Function));
+    expect(sync.set).toHaveBeenCalledWith(
+      { rowPrefs: prefs },
+      expect.any(Function),
+    );
+  });
 });
 
 describe("storage errors", () => {
@@ -171,6 +191,10 @@ describe("resetExtensionData", () => {
 
     expect(sync.remove).toHaveBeenCalledWith(
       "columnPrefs",
+      expect.any(Function),
+    );
+    expect(sync.remove).toHaveBeenCalledWith(
+      "rowPrefs",
       expect.any(Function),
     );
     expect(local.remove).toHaveBeenCalledWith(
