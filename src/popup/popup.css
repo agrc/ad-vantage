@@ -100,7 +100,8 @@ main {
 }
 
 .lookup-section,
-#column-list-section {
+#column-list-section,
+#row-list-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -173,13 +174,15 @@ main {
   padding: 24px 0;
 }
 
-#column-list {
+#column-list,
+#row-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.column-row {
+.column-row,
+.row-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -189,7 +192,8 @@ main {
   background: #f9fafb;
 }
 
-.column-label {
+.column-label,
+.row-label {
   flex: 1;
   font-size: 12px;
   overflow: hidden;
@@ -197,7 +201,8 @@ main {
   white-space: nowrap;
 }
 
-.column-controls {
+.column-controls,
+.row-controls {
   display: flex;
   align-items: center;
   gap: 10px;

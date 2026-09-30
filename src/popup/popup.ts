@@ -5,17 +5,25 @@ import {
 } from "../shared/constants";
 import {
   GET_COLUMNS_MESSAGE_TYPE,
+  GET_ROWS_MESSAGE_TYPE,
   isGetColumnsResponse,
+  isGetRowsResponse,
   SERVICE_NOW_SYNC_MESSAGE_TYPE,
   type ColumnInfo,
+  type RowInfo,
   type ServiceNowSyncResponse,
 } from "../shared/messages";
 import {
-  getColumnPrefs,
+  getPreferences,
+  updateColumnPrefs,
+  updateRowPrefs,
+  type ColumnPrefs,
+  type Preferences,
+  type RowPrefs,
+} from "../shared/preferences";
+import {
   getLookupData,
   resetExtensionData,
-  setColumnPrefs,
-  type ColumnPrefs,
   type LookupDataRecord,
 } from "../shared/storage";
 import {
@@ -23,14 +31,25 @@ import {
   setColumnFrozen,
   setColumnVisibility,
 } from "./column-prefs";
+import {
+  createPrefsWriter,
+  setVisibility,
+} from "./visibility-prefs";
 
-let prefs: ColumnPrefs = {
-  hidden: [],
-  frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+let prefs: Preferences = {
+  columns: {
+    hidden: [],
+    frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+  },
+  rows: {
+    hidden: [],
+  },
 };
 let columns: ColumnInfo[] = [];
+let rows: RowInfo[] = [];
 let lookupData: LookupDataRecord | null = null;
-const preferenceWriter = createColumnPrefsWriter(setColumnPrefs);
+const columnPreferenceWriter = createColumnPrefsWriter(updateColumnPrefs);
+const rowPreferenceWriter = createPrefsWriter(updateRowPrefs);
 const SERVICE_NOW_RESPONSE_TIMEOUT_MS = 60_000;
 
 function renderHeaderIcon() {
@@ -80,18 +99,22 @@ async function init() {
   renderExtensionName();
   renderExtensionVersion();
 
-  const [nextPrefs, nextColumns, nextLookupData] = await Promise.all([
-    getColumnPrefs(),
+  const [nextPrefs, nextColumns, nextRows, nextLookupData] = await Promise.all([
+    getPreferences(),
     detectColumnsFromActiveTab(),
+    detectRowsFromActiveTab(),
     getLookupData(),
   ]);
 
   prefs = nextPrefs;
   columns = nextColumns;
+  rows = nextRows;
   lookupData = nextLookupData;
 
   const emptyState = document.getElementById("empty-state")!;
   const columnList = document.getElementById("column-list")!;
+  const rowEmptyState = document.getElementById("row-empty-state")!;
+  const rowList = document.getElementById("row-list")!;
   const syncButton = document.getElementById("sync-btn") as HTMLButtonElement;
   const resetButton = document.getElementById("reset-btn") as HTMLButtonElement;
 
@@ -114,17 +137,35 @@ async function init() {
     renderColumnList(columnList);
   }
 
+  const hasScheduledHours = rows.some((row) => {
+    return row.label === "Scheduled Hours";
+  });
+  if (!hasScheduledHours) {
+    rowEmptyState.hidden = false;
+    rowList.hidden = true;
+  } else {
+    rowEmptyState.hidden = true;
+    rowList.hidden = false;
+    renderRowList(rowList);
+  }
+
   resetButton.addEventListener("click", async () => {
     resetButton.disabled = true;
     try {
       await resetExtensionData();
       prefs = {
-        hidden: [],
-        frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+        columns: {
+          hidden: [],
+          frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+        },
+        rows: {
+          hidden: [],
+        },
       };
       lookupData = null;
       renderLookupSummary();
       renderColumnList(columnList);
+      renderRowList(rowList);
     } catch (error) {
       renderLookupError(
         error instanceof Error ? error.message : "Settings reset failed.",
@@ -213,8 +254,9 @@ function renderLookupError(message: string) {
 function renderColumnList(container: HTMLElement) {
   container.replaceChildren();
   columns.forEach(({ key, label }) => {
-    const isVisible = !prefs.hidden.includes(key);
-    const isFrozen = prefs.frozen.includes(key);
+    const isVisible = !prefs.columns.hidden.includes(key);
+    const isFrozen = prefs.columns.frozen.includes(key);
+
     container.appendChild(createColumnRow({ key, label, isVisible, isFrozen }));
   });
 
@@ -223,8 +265,9 @@ function renderColumnList(container: HTMLElement) {
     .forEach((input) => {
       input.addEventListener("change", async () => {
         const key = input.dataset.key!;
+
         await persistColumnPrefs(
-          setColumnVisibility(prefs, key, input.checked),
+          setColumnVisibility(prefs.columns, key, input.checked),
           container,
         );
       });
@@ -235,31 +278,163 @@ function renderColumnList(container: HTMLElement) {
     .forEach((input) => {
       input.addEventListener("change", async () => {
         const key = input.dataset.key!;
+
         await persistColumnPrefs(
-          setColumnFrozen(prefs, key, input.checked),
+          setColumnFrozen(prefs.columns, key, input.checked),
           container,
         );
       });
     });
 }
 
+async function persistPreferencesDomain<T>(options: {
+  nextPrefs: T;
+  writer: { write: (prefs: T) => Promise<void> };
+  setLocal: (prefs: T) => void;
+  getLocal: (prefs: Preferences) => T;
+  errorMessage: string;
+  render: () => void;
+}): Promise<void> {
+  options.setLocal(options.nextPrefs);
+
+  try {
+    await options.writer.write(options.nextPrefs);
+    const updated = await getPreferences();
+
+    options.setLocal(options.getLocal(updated));
+  } catch (error) {
+    const updated = await getPreferences().catch(() => {
+      return prefs;
+    });
+
+    options.setLocal(options.getLocal(updated));
+    renderLookupError(
+      error instanceof Error ? error.message : options.errorMessage,
+    );
+  }
+
+  options.render();
+}
+
 async function persistColumnPrefs(
   nextPrefs: ColumnPrefs,
   container: HTMLElement,
 ): Promise<void> {
-  prefs = nextPrefs;
+  return persistPreferencesDomain({
+    nextPrefs,
+    writer: columnPreferenceWriter,
+    setLocal: (p) => {
+      prefs.columns = p;
+    },
+    getLocal: (p) => {
+      return p.columns;
+    },
+    errorMessage: "Column settings update failed.",
+    render: () => {
+      renderColumnList(container);
+    },
+  });
+}
 
-  try {
-    await preferenceWriter.write(nextPrefs);
-    prefs = await getColumnPrefs();
-  } catch (error) {
-    prefs = await getColumnPrefs().catch(() => nextPrefs);
-    renderLookupError(
-      error instanceof Error ? error.message : "Column settings update failed.",
-    );
+function renderRowList(container: HTMLElement) {
+  container.replaceChildren();
+  const scheduledRow = rows.find((r) => {
+    return r.label === "Scheduled Hours";
+  });
+
+  if (!scheduledRow) {
+    return;
   }
 
-  renderColumnList(container);
+  const isVisible = !prefs.rows.hidden.includes(scheduledRow.label);
+
+  container.appendChild(
+    createRowItem({
+      label: scheduledRow.label,
+      isVisible,
+    }),
+  );
+
+  container
+    .querySelectorAll<HTMLInputElement>('input[data-type="row-visible"]')
+    .forEach((input) => {
+      input.addEventListener("change", async () => {
+        const label = input.dataset.label!;
+
+        await persistRowPrefs(
+          setVisibility(prefs.rows, label, input.checked),
+          container,
+        );
+      });
+    });
+}
+
+async function persistRowPrefs(
+  nextPrefs: RowPrefs,
+  container: HTMLElement,
+): Promise<void> {
+  return persistPreferencesDomain({
+    nextPrefs,
+    writer: rowPreferenceWriter,
+    setLocal: (p) => {
+      prefs.rows = p;
+    },
+    getLocal: (p) => {
+      return p.rows;
+    },
+    errorMessage: "Row settings update failed.",
+    render: () => {
+      renderRowList(container);
+    },
+  });
+}
+
+function createPreferenceRow(options: {
+  className: string;
+  labelClassName: string;
+  label: string;
+  controlsClassName: string;
+  controls: HTMLElement[];
+}): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = options.className;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.className = options.labelClassName;
+  labelSpan.title = options.label;
+  labelSpan.textContent = options.label;
+
+  const controls = document.createElement("div");
+  controls.className = options.controlsClassName;
+  controls.append(...options.controls);
+
+  row.append(labelSpan, controls);
+
+  return row;
+}
+
+function createRowItem(options: {
+  label: string;
+  isVisible: boolean;
+}): HTMLDivElement {
+  const { label, isVisible } = options;
+
+  return createPreferenceRow({
+    className: "row-item",
+    labelClassName: "row-label",
+    label,
+    controlsClassName: "row-controls",
+    controls: [
+      createVisibilityControl({
+        key: label,
+        label,
+        checked: isVisible,
+        type: "row-visible",
+        labelAttr: label,
+        ariaLabel: `Show ${label} row`,
+      }),
+    ],
+  });
 }
 
 function createColumnRow(options: {
@@ -270,30 +445,30 @@ function createColumnRow(options: {
 }): HTMLDivElement {
   const { key, label, isVisible, isFrozen } = options;
 
-  const row = document.createElement("div");
-  row.className = "column-row";
-
-  const labelSpan = document.createElement("span");
-  labelSpan.className = "column-label";
-  labelSpan.title = label;
-  labelSpan.textContent = label;
-
-  const controls = document.createElement("div");
-  controls.className = "column-controls";
-
-  controls.append(
-    createVisibilityControl({ key, label, checked: isVisible }),
-    createFreezeControl({ key, label, checked: isFrozen }),
-  );
-
-  row.append(labelSpan, controls);
-  return row;
+  return createPreferenceRow({
+    className: "column-row",
+    labelClassName: "column-label",
+    label,
+    controlsClassName: "column-controls",
+    controls: [
+      createVisibilityControl({
+        key,
+        label,
+        checked: isVisible,
+        type: "visible",
+      }),
+      createFreezeControl({ key, label, checked: isFrozen }),
+    ],
+  });
 }
 
 function createVisibilityControl(options: {
   key: string;
   label: string;
   checked: boolean;
+  type?: string;
+  labelAttr?: string;
+  ariaLabel?: string;
 }): HTMLDivElement {
   const group = document.createElement("div");
   group.className = "control-group";
@@ -307,9 +482,15 @@ function createVisibilityControl(options: {
   const input = document.createElement("input");
   input.type = "checkbox";
   input.dataset.key = options.key;
-  input.dataset.type = "visible";
+  if (options.labelAttr) {
+    input.dataset.label = options.labelAttr;
+  }
+  input.dataset.type = options.type ?? "visible";
   input.checked = options.checked;
-  input.setAttribute("aria-label", `Show ${options.label} column`);
+  input.setAttribute(
+    "aria-label",
+    options.ariaLabel ?? `Show ${options.label} column`,
+  );
 
   const track = document.createElement("span");
   track.className = "toggle-track";
@@ -342,6 +523,23 @@ function createFreezeControl(options: {
   group.append(groupLabel, input);
 
   return group;
+}
+
+async function detectRowsFromActiveTab(): Promise<RowInfo[]> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
+    return [];
+  }
+
+  try {
+    const response: unknown = await chrome.tabs.sendMessage(tab.id, {
+      type: GET_ROWS_MESSAGE_TYPE,
+    });
+
+    return isGetRowsResponse(response) ? response.rows : [];
+  } catch {
+    return [];
+  }
 }
 
 async function detectColumnsFromActiveTab(): Promise<ColumnInfo[]> {
