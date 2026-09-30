@@ -81,11 +81,75 @@ export function prepareGridForFrozenColumns(grid: HTMLElement) {
   grid.style.isolation = "isolate";
 }
 
+export function getSummaryRowLabel(row: HTMLElement): string | undefined {
+  for (const cell of Array.from(row.children)) {
+    if (!(cell instanceof HTMLTableCellElement)) {
+      continue;
+    }
+
+    const bold = cell.querySelector("strong, b");
+    const boldText = bold?.textContent?.trim();
+    if (boldText && SUMMARY_LABELS.has(boldText)) {
+      return boldText;
+    }
+
+    const cellText = cell.textContent?.trim();
+    if (cellText && SUMMARY_LABELS.has(cellText)) {
+      return cellText;
+    }
+  }
+
+  return undefined;
+}
+
 export function isSummaryRow(row: HTMLElement): boolean {
-  return Array.from(row.children).some((cell) => {
-    if (!(cell instanceof HTMLTableCellElement)) return false;
-    return SUMMARY_LABELS.has(cell.textContent?.trim() ?? "");
+  return Boolean(getSummaryRowLabel(row));
+}
+
+export function applyRowVisibility(
+  grid: HTMLElement,
+  hiddenRowLabels: readonly string[],
+): void {
+  const rows = grid.querySelectorAll<HTMLElement>("tbody tr, tfoot tr");
+  const isScheduledHoursHidden = hiddenRowLabels.includes("Scheduled Hours");
+
+  rows.forEach((row) => {
+    const label = getSummaryRowLabel(row);
+    if (!label) {
+      return;
+    }
+
+    if (label === "Total Hours") {
+      if (isScheduledHoursHidden) {
+        row.style.setProperty("border-bottom", "none", "important");
+      } else {
+        row.style.borderBottom = "";
+        row.style.removeProperty("border-bottom");
+      }
+    }
+
+    if (hiddenRowLabels.includes(label)) {
+      row.style.display = "none";
+      row.classList.add("adv-hidden-row");
+    } else {
+      row.style.removeProperty("display");
+      row.classList.remove("adv-hidden-row");
+    }
   });
+}
+
+export function getSummaryRowLabels(grid: HTMLElement): string[] {
+  const labels: string[] = [];
+  const rows = grid.querySelectorAll<HTMLElement>("tbody tr, tfoot tr");
+
+  rows.forEach((row) => {
+    const label = getSummaryRowLabel(row);
+    if (label && !labels.includes(label)) {
+      labels.push(label);
+    }
+  });
+
+  return labels;
 }
 
 export function isExpandedDetailRow(

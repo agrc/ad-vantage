@@ -1,11 +1,16 @@
 import { DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY } from "../shared/constants";
-import { isGetColumnsRequest, type ColumnInfo } from "../shared/messages";
 import {
-  getColumnPrefs,
-  onColumnPrefsChanged,
-  onLookupDataChanged,
-  type ColumnPrefs,
-} from "../shared/storage";
+  isGetColumnsRequest,
+  isGetRowsRequest,
+  type ColumnInfo,
+  type RowInfo,
+} from "../shared/messages";
+import {
+  getPreferences,
+  onPreferencesChanged,
+  type Preferences,
+} from "../shared/preferences";
+import { onLookupDataChanged } from "../shared/storage";
 import { loadLookupEntries, loadLookupMap } from "../shared/lookup";
 import {
   buildAutocompleteEntries,
@@ -16,7 +21,9 @@ import { createPaginationAutomationController } from "./pagination";
 import {
   applyColumnVisibility,
   applyFrozenColumns,
+  applyRowVisibility,
   clearFrozenColumns,
+  getSummaryRowLabels,
   prepareGridForFrozenColumns,
 } from "./column-layout";
 import { getColumnLayout } from "./grid-alignment";
@@ -42,9 +49,14 @@ import { applyTimeWarnings, ensureTimeWarningStyles } from "./time-warnings";
 
 let lookupMap: Map<string, string> = new Map();
 let lookupEntries: AutocompleteLookupEntry[] = [];
-let currentPrefs: ColumnPrefs = {
-  hidden: [],
-  frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+let currentPrefs: Preferences = {
+  columns: {
+    hidden: [],
+    frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+  },
+  rows: {
+    hidden: [],
+  },
 };
 let hasLoggedMissingGrid = false;
 const warnedMissingTasks = new Set<string>();
@@ -67,30 +79,36 @@ async function init() {
   lookupEntries = buildAutocompleteEntries(initialLookupEntries);
 
   try {
-    currentPrefs = await getColumnPrefs();
+    currentPrefs = await getPreferences();
   } catch (error) {
     console.warn(
-      "[ad-vantage] Failed to load column preferences; using defaults.",
+      "[ad-vantage] Failed to load preferences; using defaults.",
       error,
     );
     currentPrefs = {
-      hidden: [],
-      frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+      columns: {
+        hidden: [],
+        frozen: [DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY],
+      },
+      rows: {
+        hidden: [],
+      },
     };
   }
 
   console.info("[ad-vantage] Initial state ready.", {
     lookupEntries: lookupMap.size,
     autocompleteEntries: lookupEntries.length,
-    hidden: currentPrefs.hidden,
-    frozen: currentPrefs.frozen,
+    hiddenColumns: currentPrefs.columns.hidden,
+    frozenColumns: currentPrefs.columns.frozen,
+    hiddenRows: currentPrefs.rows.hidden,
   });
 
   applyEnhancements();
 
-  onColumnPrefsChanged((prefs) => {
+  onPreferencesChanged((prefs) => {
     currentPrefs = prefs;
-    console.info("[ad-vantage] Column preferences changed.", prefs);
+    console.info("[ad-vantage] Preferences changed.", prefs);
     applyEnhancements();
   });
 
@@ -115,11 +133,17 @@ async function init() {
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!isGetColumnsRequest(message)) {
+    if (isGetColumnsRequest(message)) {
+      sendResponse({ columns: getColumnsForPopup() });
+
       return;
     }
 
-    sendResponse({ columns: getColumnsForPopup() });
+    if (isGetRowsRequest(message)) {
+      sendResponse({ rows: getRowsForPopup() });
+
+      return;
+    }
   });
 
   observeMutations();
@@ -187,7 +211,8 @@ function enhanceGrid(grid: HTMLElement) {
   if (stickyHeaderRow) {
     clearFrozenColumns(stickyHeaderRow.closest("table")!);
   }
-  applyColumnVisibility(grid, mainHeaderRow, currentPrefs.hidden);
+  applyColumnVisibility(grid, mainHeaderRow, currentPrefs.columns.hidden);
+  applyRowVisibility(grid, currentPrefs.rows.hidden);
   const columnLayout = getColumnLayout(mainHeaderRow);
   if (mainHeaderRow.querySelector(`th[data-qa="${DAILY_ACTIVITY_QA}"]`)) {
     syncStickyHeaderColumnWidths(columnLayout, stickyHeaderRow);
@@ -196,26 +221,43 @@ function enhanceGrid(grid: HTMLElement) {
     applyColumnVisibility(
       stickyHeaderRow.closest("table")!,
       stickyHeaderRow,
-      currentPrefs.hidden,
+      currentPrefs.columns.hidden,
     );
   }
   applyFrozenColumns(
     grid,
     mainHeaderRow,
-    currentPrefs.frozen,
+    currentPrefs.columns.frozen,
     columnLayout,
   );
   if (stickyHeaderRow) {
     applyFrozenColumns(
       stickyHeaderRow.closest("table")!,
       stickyHeaderRow,
-      currentPrefs.frozen,
+      currentPrefs.columns.frozen,
       columnLayout,
     );
   }
   layoutRefresh.sync([mainHeaderRow, ...getColumnHeaders(mainHeaderRow)]);
   autocomplete.bind(grid, mainHeaderRow, lookupEntries);
   applyTimeWarnings(grid, mainHeaderRow);
+}
+
+function getRowsForPopup(): RowInfo[] {
+  const grids = getEnhanceableGrids();
+  const seen = new Set<string>();
+  const rows: RowInfo[] = [];
+
+  for (const grid of grids) {
+    for (const label of getSummaryRowLabels(grid)) {
+      if (!seen.has(label)) {
+        seen.add(label);
+        rows.push({ label });
+      }
+    }
+  }
+
+  return rows;
 }
 
 function getColumnsForPopup(): ColumnInfo[] {

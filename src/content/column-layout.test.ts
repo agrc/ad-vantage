@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   applyColumnVisibility,
   applyFrozenColumns,
+  applyRowVisibility,
   getPrimaryAndSummaryBodyRows,
+  getSummaryRowLabel,
+  getSummaryRowLabels,
   prepareGridForFrozenColumns,
 } from "./column-layout";
 import { getColumnLayout } from "./grid-alignment";
@@ -164,5 +167,90 @@ describe("applyFrozenColumns", () => {
 
     expect(headers[0].style.left).toBe("0px");
     expect(headers[2].style.left).toBe("80px");
+  });
+});
+
+describe("getSummaryRowLabel", () => {
+  it("extracts label from cell with plain text", () => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>Total Hours</td><td>40:00</td>";
+
+    expect(getSummaryRowLabel(tr)).toBe("Total Hours");
+  });
+
+  it("extracts label from cell with bold element", () => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td><strong>Scheduled Hours</strong></td><td>40:00</td>";
+
+    expect(getSummaryRowLabel(tr)).toBe("Scheduled Hours");
+  });
+
+  it("returns undefined for non-summary rows", () => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>Regular Task</td><td>8:00</td>";
+
+    expect(getSummaryRowLabel(tr)).toBeUndefined();
+  });
+});
+
+describe("applyRowVisibility", () => {
+  function createSummaryGrid(): HTMLTableElement {
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <tbody role="rowgroup">
+        <tr class="css-1w5lrs3 " role="row" id="tableDataRow.1" tabindex="0" aria-label="Record 1">
+          <td role="gridcell" class="css-10mbh1e">Task 1</td>
+          <td class="css-11n6kl" role="gridcell">8:00</td>
+        </tr>
+        <tr class="css-18zmpij">
+          <td class="css-gy1gdu" colspan="2"><b>Total Hours</b></td>
+          <td class="css-1gcr4h8">38:00</td>
+        </tr>
+        <tr class="" style="">
+          <td class="css-og9nz1" colspan="3"><b>Scheduled Hours</b></td>
+          <td class="css-1gcr4h8">40:00</td>
+        </tr>
+      </tbody>
+    `;
+
+    return table;
+  }
+
+  it("hides rows whose labels are in hiddenRowLabels and restores them when removed", () => {
+    const grid = createSummaryGrid();
+    const rows = grid.querySelectorAll<HTMLElement>("tbody tr");
+    const totalRow = rows[1];
+    const scheduledRow = rows[2];
+
+    applyRowVisibility(grid, ["Scheduled Hours"]);
+
+    expect(scheduledRow.style.display).toBe("none");
+    expect(scheduledRow.classList).toContain("adv-hidden-row");
+    expect(totalRow.style.display).toBe("");
+    expect(totalRow.classList).not.toContain("adv-hidden-row");
+    expect(totalRow.style.borderBottomStyle).toBe("none");
+
+    applyRowVisibility(grid, []);
+
+    expect(scheduledRow.style.display).toBe("");
+    expect(scheduledRow.classList).not.toContain("adv-hidden-row");
+    expect(totalRow.style.borderBottomStyle).toBe("");
+  });
+});
+
+describe("getSummaryRowLabels", () => {
+  it("collects unique summary row labels from table body and footer", () => {
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <tbody>
+        <tr data-row="entry"><td>Task 1</td><td>8:00</td></tr>
+        <tr data-row="scheduled"><td><strong>Scheduled Hours</strong></td><td>40:00</td></tr>
+      </tbody>
+      <tfoot>
+        <tr data-row="total"><td><strong>Total Hours</strong></td><td>38:00</td></tr>
+      </tfoot>
+    `;
+
+    expect(getSummaryRowLabels(table)).toEqual(["Scheduled Hours", "Total Hours"]);
   });
 });
