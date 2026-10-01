@@ -81,16 +81,68 @@ describe("preferences facade", () => {
     vi.mocked(storage.getRowPrefs).mockResolvedValue({ hidden: ["Scheduled Hours"] });
     vi.mocked(storage.getColumnPrefs).mockResolvedValue({ hidden: ["TASK"], frozen: [] });
 
-    await colCallback?.({ hidden: ["TASK"], frozen: [] });
-    expect(received[0]).toEqual({
-      columns: { hidden: ["TASK"], frozen: [] },
-      rows: { hidden: ["Scheduled Hours"] },
+    colCallback?.({ hidden: ["TASK"], frozen: [] });
+    await vi.waitFor(() => {
+      expect(received[0]).toEqual({
+        columns: { hidden: ["TASK"], frozen: [] },
+        rows: { hidden: ["Scheduled Hours"] },
+      });
     });
 
-    await rowCallback?.({ hidden: [] });
-    expect(received[1]).toEqual({
-      columns: { hidden: ["TASK"], frozen: [] },
+    rowCallback?.({ hidden: [] });
+    await vi.waitFor(() => {
+      expect(received[1]).toEqual({
+        columns: { hidden: ["TASK"], frozen: [] },
+        rows: { hidden: [] },
+      });
+    });
+  });
+
+  it("serializes aggregate notifications in order when events arrive close together", async () => {
+    let colCallback: ((cols: storage.ColumnPrefs) => void) | undefined;
+    let rowCallback: ((rows: storage.RowPrefs) => void) | undefined;
+
+    vi.mocked(storage.onColumnPrefsChanged).mockImplementation((cb) => {
+      colCallback = cb;
+    });
+    vi.mocked(storage.onRowPrefsChanged).mockImplementation((cb) => {
+      rowCallback = cb;
+    });
+
+    const received: Preferences[] = [];
+    onPreferencesChanged((prefs) => {
+      received.push(prefs);
+    });
+
+    let resolveRowRead!: (rows: storage.RowPrefs) => void;
+    const delayedRowRead = new Promise<storage.RowPrefs>((resolve) => {
+      resolveRowRead = resolve;
+    });
+
+    vi.mocked(storage.getRowPrefs).mockReturnValueOnce(delayedRowRead);
+    vi.mocked(storage.getColumnPrefs).mockResolvedValueOnce({
+      hidden: ["TASK_1"],
+      frozen: [],
+    });
+
+    colCallback?.({ hidden: ["TASK_1"], frozen: [] });
+    rowCallback?.({ hidden: ["Scheduled Hours"] });
+
+    expect(received).toHaveLength(0);
+
+    resolveRowRead({ hidden: [] });
+
+    await vi.waitFor(() => {
+      expect(received).toHaveLength(2);
+    });
+
+    expect(received[0]).toEqual({
+      columns: { hidden: ["TASK_1"], frozen: [] },
       rows: { hidden: [] },
+    });
+    expect(received[1]).toEqual({
+      columns: { hidden: ["TASK_1"], frozen: [] },
+      rows: { hidden: ["Scheduled Hours"] },
     });
   });
 });

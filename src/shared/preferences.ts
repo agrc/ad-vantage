@@ -37,15 +37,32 @@ export async function updateRowPrefs(prefs: RowPrefs): Promise<void> {
 export function onPreferencesChanged(
   callback: (prefs: Preferences) => void,
 ): void {
-  onColumnPrefsChanged(async (columns) => {
-    const rows = await getRowPrefs();
+  let pendingUpdate = Promise.resolve();
 
-    callback({ columns, rows });
+  const enqueue = (fetchSnapshot: () => Promise<Preferences>) => {
+    pendingUpdate = pendingUpdate
+      .catch(() => {
+        return undefined;
+      })
+      .then(async () => {
+        const prefs = await fetchSnapshot();
+        callback(prefs);
+      });
+  };
+
+  onColumnPrefsChanged((columns) => {
+    enqueue(async () => {
+      const rows = await getRowPrefs();
+
+      return { columns, rows };
+    });
   });
 
-  onRowPrefsChanged(async (rows) => {
-    const columns = await getColumnPrefs();
+  onRowPrefsChanged((rows) => {
+    enqueue(async () => {
+      const columns = await getColumnPrefs();
 
-    callback({ columns, rows });
+      return { columns, rows };
+    });
   });
 }
