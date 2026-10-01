@@ -6,7 +6,8 @@ import {
 import { getColumnHeaders, getColumnIndex, getColumnKey } from "./grid-dom";
 
 const HIDDEN_COLSPAN_ATTR = "data-adv-original-colspan";
-const SUMMARY_LABELS = new Set(["Total Hours", "Scheduled Hours"]);
+export const SUMMARY_LABELS = new Set(["Total Hours", "Scheduled Hours"]);
+export const CONFIGURABLE_SUMMARY_LABELS = new Set(["Scheduled Hours"]);
 
 export function applyColumnVisibility(
   grid: HTMLElement,

@@ -3,6 +3,7 @@ import {
   applyColumnVisibility,
   applyFrozenColumns,
   applyRowVisibility,
+  CONFIGURABLE_SUMMARY_LABELS,
   getPrimaryAndSummaryBodyRows,
   getSummaryRowLabel,
   getSummaryRowLabels,
@@ -252,5 +253,9 @@ describe("getSummaryRowLabels", () => {
     `;
 
     expect(getSummaryRowLabels(table)).toEqual(["Scheduled Hours", "Total Hours"]);
+  });
+
+  it("identifies configurable summary row labels", () => {
+    expect(Array.from(CONFIGURABLE_SUMMARY_LABELS)).toEqual(["Scheduled Hours"]);
   });
 });

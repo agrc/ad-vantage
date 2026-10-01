@@ -145,7 +145,6 @@ beforeEach(() => {
           return {
             rows: [
               { label: "Scheduled Hours" },
-              { label: "Total Hours" },
             ],
           };
         }
@@ -318,7 +317,7 @@ describe("popup integration", () => {
     ).toBe(false);
   });
 
-  it("shows row empty state when Scheduled Hours is not detected", async () => {
+  it("shows row empty state when no rows are detected", async () => {
     const tabs = chrome.tabs as typeof chrome.tabs & {
       sendMessage: ReturnType<typeof vi.fn>;
     };
@@ -331,7 +330,7 @@ describe("popup integration", () => {
 
       if (message.type === "adv:get-rows") {
         return {
-          rows: [{ label: "Total Hours" }],
+          rows: [],
         };
       }
 

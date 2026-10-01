@@ -137,10 +137,7 @@ async function init() {
     renderColumnList(columnList);
   }
 
-  const hasScheduledHours = rows.some((row) => {
-    return row.label === "Scheduled Hours";
-  });
-  if (!hasScheduledHours) {
+  if (rows.length === 0) {
     rowEmptyState.hidden = false;
     rowList.hidden = true;
   } else {
@@ -338,22 +335,17 @@ async function persistColumnPrefs(
 
 function renderRowList(container: HTMLElement) {
   container.replaceChildren();
-  const scheduledRow = rows.find((r) => {
-    return r.label === "Scheduled Hours";
+
+  rows.forEach((row) => {
+    const isVisible = !prefs.rows.hidden.includes(row.label);
+
+    container.appendChild(
+      createRowItem({
+        label: row.label,
+        isVisible,
+      }),
+    );
   });
-
-  if (!scheduledRow) {
-    return;
-  }
-
-  const isVisible = !prefs.rows.hidden.includes(scheduledRow.label);
-
-  container.appendChild(
-    createRowItem({
-      label: scheduledRow.label,
-      isVisible,
-    }),
-  );
 
   container
     .querySelectorAll<HTMLInputElement>('input[data-type="row-visible"]')

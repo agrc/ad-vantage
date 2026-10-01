@@ -23,6 +23,7 @@ import {
   applyFrozenColumns,
   applyRowVisibility,
   clearFrozenColumns,
+  CONFIGURABLE_SUMMARY_LABELS,
   getSummaryRowLabels,
   prepareGridForFrozenColumns,
 } from "./column-layout";
@@ -250,7 +251,7 @@ function getRowsForPopup(): RowInfo[] {
 
   for (const grid of grids) {
     for (const label of getSummaryRowLabels(grid)) {
-      if (!seen.has(label)) {
+      if (CONFIGURABLE_SUMMARY_LABELS.has(label) && !seen.has(label)) {
         seen.add(label);
         rows.push({ label });
       }
