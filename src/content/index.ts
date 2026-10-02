@@ -45,6 +45,7 @@ import {
   isEnhanceableGrid,
 } from "./grid-dom";
 import { createLayoutRefreshController } from "./layout-refresh";
+import { createDailyActivityRowFocusController } from "./new-row-focus";
 import { createUpdateTimesheetShortcutController } from "./page-actions";
 import { applyTimeWarnings, ensureTimeWarningStyles } from "./time-warnings";
 
@@ -62,6 +63,7 @@ let currentPrefs: Preferences = {
 let hasLoggedMissingGrid = false;
 const warnedMissingTasks = new Set<string>();
 const paginationAutomation = createPaginationAutomationController();
+const dailyActivityRowFocus = createDailyActivityRowFocusController();
 const updateTimesheetShortcut = createUpdateTimesheetShortcutController();
 const autocomplete = createAutocompleteController(document, applyEnhancements);
 const layoutRefresh = createLayoutRefreshController(applyEnhancements);
@@ -174,6 +176,7 @@ function applyEnhancements() {
 
     hasLoggedMissingGrid = false;
     grids.forEach(enhanceGrid);
+    dailyActivityRowFocus.sync();
     grids
       .filter(isDailyActivityGrid)
       .forEach((grid) => paginationAutomation.sync(grid));
