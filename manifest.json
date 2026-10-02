@@ -26,6 +26,15 @@
     "default_popup": "src/popup/index.html",
     "default_title": "ad-vantage"
   },
+  "commands": {
+    "add-daily-activity-row": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Period",
+        "mac": "Command+Shift+Period"
+      },
+      "description": "Add a Daily Activity row"
+    }
+  },
   "content_scripts": [
     {
       "matches": [

@@ -1,5 +1,6 @@
 export const GET_COLUMNS_MESSAGE_TYPE = "adv:get-columns";
 export const GET_ROWS_MESSAGE_TYPE = "adv:get-rows";
+export const ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE = "adv:add-daily-activity-row";
 export const SERVICE_NOW_SYNC_MESSAGE_TYPE = "adv:servicenow-sync";
 
 export interface ColumnInfo {
@@ -21,6 +22,10 @@ export interface GetColumnsResponse {
 
 export interface GetRowsRequest {
   type: typeof GET_ROWS_MESSAGE_TYPE;
+}
+
+export interface AddDailyActivityRowRequest {
+  type: typeof ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE;
 }
 
 export interface GetRowsResponse {
@@ -56,6 +61,12 @@ export function isGetRowsRequest(
   value: unknown,
 ): value is GetRowsRequest {
   return hasMessageType(value, GET_ROWS_MESSAGE_TYPE);
+}
+
+export function isAddDailyActivityRowRequest(
+  value: unknown,
+): value is AddDailyActivityRowRequest {
+  return hasMessageType(value, ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE);
 }
 
 export function isGetRowsResponse(
