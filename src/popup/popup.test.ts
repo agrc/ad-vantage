@@ -182,6 +182,45 @@ describe("popup integration", () => {
     ).toEqual(["Daily Activity", "Description", "Mon"]);
   });
 
+  it("shows the column empty state when the active tab cannot be messaged", async () => {
+    const tabs = chrome.tabs as typeof chrome.tabs & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    tabs.sendMessage.mockRejectedValue(new Error("Could not connect to tab"));
+
+    await loadPopup();
+
+    expect(document.getElementById("empty-state")?.hidden).toBe(false);
+    expect(document.getElementById("column-list")?.hidden).toBe(true);
+    expect(document.querySelectorAll(".column-label")).toHaveLength(0);
+  });
+
+  it("does not add Description to grids without a Daily Activity column", async () => {
+    const tabs = chrome.tabs as typeof chrome.tabs & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    tabs.sendMessage.mockResolvedValue({
+      columns: [
+        { key: "START_DATE", label: "Pay Period Start Date" },
+        { key: "END_DATE", label: "Pay Period End Date" },
+        { key: "STATUS", label: "Status" },
+      ],
+    });
+
+    await loadPopup();
+
+    expect(
+      Array.from(document.querySelectorAll(".column-label")).map(
+        (element) => element.textContent,
+      ),
+    ).toEqual(["Pay Period Start Date", "Pay Period End Date", "Status"]);
+    expect(
+      document.querySelector(
+        `input[data-key="${DESCRIPTION_COL_KEY}"]`,
+      ),
+    ).toBeNull();
+  });
+
   it("links production builds to the main changelog", async () => {
     const runtime = chrome.runtime as typeof chrome.runtime & {
       getManifest: ReturnType<typeof vi.fn>;
