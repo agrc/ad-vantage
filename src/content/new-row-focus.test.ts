@@ -31,9 +31,7 @@ describe("createDailyActivityRowFocusController", () => {
     )!;
     const existingFocus = vi.spyOn(existingInput, "focus");
 
-    document
-      .querySelector<HTMLButtonElement>('button[aria-label="Add Record"]')!
-      .click();
+    expect(controller.addRow()).toBe(true);
     controller.sync();
 
     const newRow = document.createElement("tr");
@@ -52,6 +50,21 @@ describe("createDailyActivityRowFocusController", () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
     expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     expect(existingFocus).not.toHaveBeenCalled();
+    controller.dispose();
+  });
+
+  it("does not add a row when the Daily Activity grid is absent", () => {
+    document.body.innerHTML = '<button aria-label="Add Record">Add</button>';
+    const controller = createDailyActivityRowFocusController();
+    const click = vi.spyOn(
+      document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Add Record"]',
+      )!,
+      "click",
+    );
+
+    expect(controller.addRow()).toBe(false);
+    expect(click).not.toHaveBeenCalled();
     controller.dispose();
   });
 

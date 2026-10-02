@@ -15,6 +15,7 @@ interface PendingFocus {
 }
 
 export interface DailyActivityRowFocusController {
+  addRow: () => boolean;
   sync: () => void;
   dispose: () => void;
 }
@@ -74,6 +75,23 @@ export function createDailyActivityRowFocusController(
   root.addEventListener("click", onAddRecordClick, true);
 
   return {
+    addRow() {
+      if (getDailyActivityGrids().length === 0) return false;
+
+      const button = root.querySelector<HTMLButtonElement>(
+        ADD_RECORD_BUTTON_SELECTOR,
+      );
+      if (
+        !button ||
+        button.disabled ||
+        button.getAttribute("aria-disabled") === "true"
+      ) {
+        return false;
+      }
+
+      button.click();
+      return true;
+    },
     sync() {
       if (!pendingFocus) return;
 
