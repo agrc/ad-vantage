@@ -1,5 +1,6 @@
 import { DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY } from "../shared/constants";
 import {
+  isAddDailyActivityRowRequest,
   isGetColumnsRequest,
   isGetRowsRequest,
   type ColumnInfo,
@@ -144,6 +145,12 @@ async function init() {
 
     if (isGetRowsRequest(message)) {
       sendResponse({ rows: getRowsForPopup() });
+
+      return;
+    }
+
+    if (isAddDailyActivityRowRequest(message)) {
+      sendResponse({ ok: dailyActivityRowFocus.addRow() });
 
       return;
     }
