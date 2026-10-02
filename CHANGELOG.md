@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.16](https://github.com/agrc/ad-vantage/compare/v1.3.15...v1.3.16) (2026-10-02)
+
+
+### Dependencies
+
+* bump undici from 7.29.0 to 7.30.0 ([53290cd](https://github.com/agrc/ad-vantage/commit/53290cd33e601d6aec6d387064c4f856f88615ee))
+* **dev:** bump jsdom ([7797fdb](https://github.com/agrc/ad-vantage/commit/7797fdb7c16815d923936588cba3051bcef04ac9))
+* **dev:** bump the safe-dependencies group across 1 directory with 5 updates ([bccf94a](https://github.com/agrc/ad-vantage/commit/bccf94ac2e2d9ac534a59dbfffca73e709eedacd))
+
 ## [1.3.15](https://github.com/agrc/ad-vantage/compare/v1.3.14...v1.3.15) (2026-09-23)
 
 
