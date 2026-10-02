@@ -552,6 +552,8 @@ async function detectColumnsFromActiveTab(): Promise<ColumnInfo[]> {
 }
 
 function ensureDescriptionColumn(columns: ColumnInfo[]): ColumnInfo[] {
+  if (columns.length === 0) return columns;
+
   const withoutDescription = columns.filter(
     ({ key }) => key !== DESCRIPTION_COL_KEY,
   );
@@ -564,7 +566,7 @@ function ensureDescriptionColumn(columns: ColumnInfo[]): ColumnInfo[] {
   };
 
   if (insertAt === -1) {
-    return [...withoutDescription, descriptionColumn];
+    return withoutDescription;
   }
 
   return [
