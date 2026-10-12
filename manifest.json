@@ -39,7 +39,8 @@
     {
       "matches": [
         "https://vantage.utah.gov/*",
-        "https://vantage.access.utah.gov/*"
+        "https://vantage.access.utah.gov/*",
+        "https://vantage-ma1.utah.gov/*"
       ],
       "js": [
         "src/content/index.ts"
