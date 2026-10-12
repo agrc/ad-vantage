@@ -4,10 +4,10 @@ A Chrome extension that makes the [Vantage timesheet app](https://vantage.utah.g
 
 ## Features
 
-- **Frozen columns** — Keep key columns like employee name and project code pinned while you scroll horizontally through date columns.
+- **Frozen columns** — Keep key columns like "Daily Activity" and "Event" pinned while you scroll horizontally.
 - **Hidden columns** — Declutter your view by hiding columns you don't need.
-- **Description lookup column** — Add an optional column that displays task descriptions fetched from ServiceNow.
-- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your synced task data.
+- **Description lookup column** — Add a "Description" column that displays task descriptions fetched from ServiceNow.
+- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your task data fetched from ServiceNow.
 - **New row focus** — Adding a record on the Daily Activity tab scrolls the new row into view and focuses its Daily Activity input.
 - **Add-row keyboard shortcut** — Press `Ctrl+Shift+.` on Windows/Linux or `Command+Shift+.` on macOS to add a Daily Activity record without leaving the keyboard.
 - **Update Timesheet shortcut** — On `Timesheet (TIMEI)` in the `Daily Activity` tab, adds an `Update Timesheet` button next to the lower three-dot menu so you can trigger the native action in one click.
