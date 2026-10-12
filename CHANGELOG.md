@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0-rc.2](https://github.com/agrc/ad-vantage/compare/v1.4.0-rc.1...v1.4.0-rc.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* add ma1 testing vantage host ([7991764](https://github.com/agrc/ad-vantage/commit/799176493d3a0f55757ef15e9b5d232cdf2c833d))
+
 ## [1.4.0-rc.1](https://github.com/agrc/ad-vantage/compare/v1.3.15...v1.4.0-rc.1) (2026-10-02)
 
 
