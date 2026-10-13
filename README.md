@@ -14,7 +14,7 @@ A Chrome extension that makes the [Vantage timesheet app](https://vantage.utah.g
 - **Automatic pagination upgrade** — On the Daily Activity tab grid, the extension automatically selects the highest available visible page-size option only when the grid is in a verified fallback state at the default 20 rows, including after adding a new row when the grid resets.
 - **Quarter-hour warnings** — Time cells that don't end in `:00`, `:15`, `:30`, or `:45` are highlighted with an orange outline, helping you catch accidental decimal-style entries.
 - **Missing Event warnings** — An empty Event cell is highlighted with a red outline when its row contains entered hours.
-- The production extension works on `vantage.utah.gov` and `vantage.access.utah.gov` (for non-state networks); the pre-release build also supports `vantage-ma1.utah.gov` for testing.
+- The production extension works on `vantage.utah.gov` and `vantage.access.utah.gov` (for non-state networks); local development and pre-release builds also support `vantage-ma1.utah.gov` for testing.
 
 <p align="center"><img src="popup.png" alt="ad-vantage popup screenshot" /></p>
 
@@ -86,7 +86,7 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
    pnpm dev
    ```
 
-   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. The generated manifest uses a Chrome-compatible numeric version, even when the source version includes an `-rc` suffix. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
+   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. The generated manifest uses a Chrome-compatible numeric version, even when the source version includes an `-rc` suffix. The development build supports `vantage-ma1.utah.gov` for testing. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
 
 4. **Launch the dedicated debug browser:**
 

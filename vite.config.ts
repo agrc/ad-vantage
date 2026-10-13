@@ -14,6 +14,12 @@ export default defineConfig(({ command, mode }) => {
   const extensionName = validateExtensionName(environment.VITE_EXTENSION_NAME);
   const extensionKey = environment.VITE_EXTENSION_KEY?.trim();
   const isPreReleaseBuild = mode === "pre-release";
+  const contentScriptBuildTarget =
+    mode === "development"
+      ? "development"
+      : isPreReleaseBuild
+        ? "pre-release"
+        : "production";
   const usesPreReleaseBranding = mode === "development" || isPreReleaseBuild;
   const extensionVersion = getExtensionVersion(manifest.version);
   const iconDirectory = usesPreReleaseBranding ? "icons/pre-release" : "icons";
@@ -28,7 +34,7 @@ export default defineConfig(({ command, mode }) => {
           key: extensionKey,
           content_scripts: getContentScriptsForBuild(
             manifest.content_scripts,
-            isPreReleaseBuild,
+            contentScriptBuildTarget,
           ),
           icons: getIconPaths(iconDirectory),
           action: {
