@@ -12,21 +12,23 @@ const CONTENT_SCRIPTS = [
 ];
 
 describe("build content script hosts", () => {
-  it("excludes the MA1 host from production and keeps it in pre-release", () => {
-    const productionMatches = getContentScriptsForBuild(
-      CONTENT_SCRIPTS,
-      false,
-    ).flatMap(
-      (contentScript) => contentScript.matches,
-    );
-    const preReleaseMatches = getContentScriptsForBuild(
-      CONTENT_SCRIPTS,
-      true,
-    ).flatMap(
-      (contentScript) => contentScript.matches,
-    );
+  it("includes the MA1 host in development and pre-release builds", () => {
+    for (const buildTarget of ["development", "pre-release"] as const) {
+      const matches = getContentScriptsForBuild(
+        CONTENT_SCRIPTS,
+        buildTarget,
+      ).flatMap((contentScript) => contentScript.matches);
 
-    expect(productionMatches).not.toContain(MA1_HOST_MATCH);
-    expect(preReleaseMatches).toContain(MA1_HOST_MATCH);
+      expect(matches).toContain(MA1_HOST_MATCH);
+    }
+  });
+
+  it("excludes the MA1 host from production builds", () => {
+    const matches = getContentScriptsForBuild(
+      CONTENT_SCRIPTS,
+      "production",
+    ).flatMap((contentScript) => contentScript.matches);
+
+    expect(matches).not.toContain(MA1_HOST_MATCH);
   });
 });

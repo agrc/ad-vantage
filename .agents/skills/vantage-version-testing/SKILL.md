@@ -21,7 +21,7 @@ Run each applicable test and report its status with observed evidence. Use these
 
 ### 1. Host Activation and Scope
 
-- On a supported host (including a configured QA host), verify the content script loads and the page remains usable. Check the manifest's `matches` list rather than assuming a QA hostname is supported.
+- On a supported host (including a configured QA host), verify the content script loads and the page remains usable. Check the generated manifest's `matches` list: `vantage-ma1.utah.gov` is supported by local development and pre-release builds, but excluded from production.
 - Verify the Daily Activity enhancements do not appear on unrelated pages or on the Time Entry and Summary tabs.
 - On `Timesheet (TIMEI)` with Daily Activity active, verify the Description column, Daily Activity autocomplete, time warnings, and Update Timesheet shortcut appear only when their owning UI is present.
 
