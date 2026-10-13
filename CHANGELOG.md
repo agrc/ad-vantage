@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0-rc.3](https://github.com/agrc/ad-vantage/compare/v1.4.0-rc.2...v1.4.0-rc.3) (2026-10-13)
+
+
+### Bug Fixes
+
+* only support vantage testing environment for pre-release version ([9d5c45e](https://github.com/agrc/ad-vantage/commit/9d5c45e7af13e47bd8221fdec6ce59482b2aa9b5))
+
 ## [1.4.0-rc.2](https://github.com/agrc/ad-vantage/compare/v1.4.0-rc.1...v1.4.0-rc.2) (2026-10-12)
 
 
