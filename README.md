@@ -4,15 +4,17 @@ A Chrome extension that makes the [Vantage timesheet app](https://vantage.utah.g
 
 ## Features
 
-- **Frozen columns** — Keep key columns like employee name and project code pinned while you scroll horizontally through date columns.
+- **Frozen columns** — Keep key columns like "Daily Activity" and "Event" pinned while you scroll horizontally.
 - **Hidden columns** — Declutter your view by hiding columns you don't need.
-- **Description lookup column** — Add an optional column that displays task descriptions fetched from ServiceNow.
-- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your synced task data.
+- **Description lookup column** — Add a "Description" column that displays task descriptions fetched from ServiceNow.
+- **Daily Activity autocomplete** — Get suggestions as you type in the Daily Activity field, sourced from your task data fetched from ServiceNow.
+- **New row focus** — Adding a record on the Daily Activity tab scrolls the new row into view and focuses its Daily Activity input.
+- **Add-row keyboard shortcut** — Press `Ctrl+Shift+.` on Windows/Linux or `Command+Shift+.` on macOS to add a Daily Activity record without leaving the keyboard.
 - **Update Timesheet shortcut** — On `Timesheet (TIMEI)` in the `Daily Activity` tab, adds an `Update Timesheet` button next to the lower three-dot menu so you can trigger the native action in one click.
 - **Automatic pagination upgrade** — On the Daily Activity tab grid, the extension automatically selects the highest available visible page-size option only when the grid is in a verified fallback state at the default 20 rows, including after adding a new row when the grid resets.
 - **Quarter-hour warnings** — Time cells that don't end in `:00`, `:15`, `:30`, or `:45` are highlighted with an orange outline, helping you catch accidental decimal-style entries.
 - **Missing Event warnings** — An empty Event cell is highlighted with a red outline when its row contains entered hours.
-- Works on both `vantage.utah.gov` and `vantage.access.utah.gov` (for non-state networks).
+- The production extension works on `vantage.utah.gov` and `vantage.access.utah.gov` (for non-state networks); local development and pre-release builds also support `vantage-ma1.utah.gov` for testing.
 
 <p align="center"><img src="popup.png" alt="ad-vantage popup screenshot" /></p>
 
@@ -36,9 +38,12 @@ The extension icon will appear in your Chrome toolbar. It is only active when yo
 2. The extension activates automatically — columns are frozen and your saved visibility preferences are applied.
 3. **Click the extension icon** in your Chrome toolbar to open the popup, where you can:
    - Show or hide individual columns.
+   - Show or hide the Scheduled Hours summary row.
    - Fetch the current task descriptions from ServiceNow.
 4. On `Timesheet (TIMEI)` with the `Daily Activity` grid visible, use the added `Update Timesheet` button beside the lower three-dot menu to run the same native update action without opening the menu first.
-5. When the Daily Activity tab grid shows inline pagination options such as `50` or `100`, the extension automatically switches to the highest enabled option only after it detects a verified fallback to `20`, and it will not repeat that native click just because the page emitted more generic mutation noise.
+5. When you add a record on the Daily Activity tab, the new row is brought into view and its Daily Activity input receives focus.
+6. To change the add-row shortcut or resolve a shortcut conflict, open `chrome://extensions/shortcuts` and edit the ad-vantage command.
+7. When the Daily Activity tab grid shows inline pagination options such as `50` or `100`, the extension automatically switches to the highest enabled option only after it detects a verified fallback to `20`, and it will not repeat that native click just because the page emitted more generic mutation noise.
 
 ### ServiceNow Task Sync
 
@@ -81,7 +86,7 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
    pnpm dev
    ```
 
-   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. The generated manifest uses a Chrome-compatible numeric version, even when the source version includes an `-rc` suffix. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
+   This starts the Vite dev server with HMR via `@crxjs/vite-plugin`. Extension files are written to `dist-dev` and require `http://localhost:5173` to remain running. The generated manifest uses a Chrome-compatible numeric version, even when the source version includes an `-rc` suffix. The development build supports `vantage-ma1.utah.gov` for testing. Vite loads the development ServiceNow endpoint from `.env.development` and the public OAuth client ID from the ignored `.env.local` file.
 
 4. **Launch the dedicated debug browser:**
 

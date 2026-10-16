@@ -9,6 +9,7 @@
     "sysparm",
     "TIMEI",
     "Timesheet",
+    "timesheets",
     "ugrc",
     "VITE",
     "webstore"
@@ -17,5 +18,8 @@
     "./node_modules/.bin/vite": true,
     "./node_modules/.bin/vitest": true,
     "./node_modules/.bin/eslint": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }

@@ -1,8 +1,14 @@
 export const GET_COLUMNS_MESSAGE_TYPE = "adv:get-columns";
+export const GET_ROWS_MESSAGE_TYPE = "adv:get-rows";
+export const ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE = "adv:add-daily-activity-row";
 export const SERVICE_NOW_SYNC_MESSAGE_TYPE = "adv:servicenow-sync";
 
 export interface ColumnInfo {
   key: string;
+  label: string;
+}
+
+export interface RowInfo {
   label: string;
 }
 
@@ -12,6 +18,18 @@ export interface GetColumnsRequest {
 
 export interface GetColumnsResponse {
   columns: ColumnInfo[];
+}
+
+export interface GetRowsRequest {
+  type: typeof GET_ROWS_MESSAGE_TYPE;
+}
+
+export interface AddDailyActivityRowRequest {
+  type: typeof ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE;
+}
+
+export interface GetRowsResponse {
+  rows: RowInfo[];
 }
 
 export interface ServiceNowSyncRequest {
@@ -39,6 +57,32 @@ export function isGetColumnsResponse(
   );
 }
 
+export function isGetRowsRequest(
+  value: unknown,
+): value is GetRowsRequest {
+  return hasMessageType(value, GET_ROWS_MESSAGE_TYPE);
+}
+
+export function isAddDailyActivityRowRequest(
+  value: unknown,
+): value is AddDailyActivityRowRequest {
+  return hasMessageType(value, ADD_DAILY_ACTIVITY_ROW_MESSAGE_TYPE);
+}
+
+export function isGetRowsResponse(
+  value: unknown,
+): value is GetRowsResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const response = value as Partial<GetRowsResponse>;
+
+  return (
+    Array.isArray(response.rows) && response.rows.every(isRowInfo)
+  );
+}
+
 export function isServiceNowSyncRequest(
   value: unknown,
 ): value is ServiceNowSyncRequest {
@@ -58,4 +102,14 @@ function isColumnInfo(value: unknown): value is ColumnInfo {
 
   const column = value as Partial<ColumnInfo>;
   return typeof column.key === "string" && typeof column.label === "string";
+}
+
+function isRowInfo(value: unknown): value is RowInfo {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const row = value as Partial<RowInfo>;
+
+  return typeof row.label === "string";
 }

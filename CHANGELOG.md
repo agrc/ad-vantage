@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.4.0-rc.4](https://github.com/agrc/ad-vantage/compare/v1.3.15...v1.4.0-rc.4) (2026-10-16)
+
+
+### Features
+
+* add toggle for hiding the Scheduled Hours row on the Time Entry tab ([4e12d84](https://github.com/agrc/ad-vantage/commit/4e12d84ac3b9e42ba91f425859a2bf4264a1c952))
+* auto-focus daily activity input when adding new row ([7528edd](https://github.com/agrc/ad-vantage/commit/7528edd8d8c985da06c48dbdd52f3dbe65e65bdc)), refs [#18](https://github.com/agrc/ad-vantage/issues/18)
+* fix bug showing description column toggle on non-vantage pages ([4dae1c3](https://github.com/agrc/ad-vantage/commit/4dae1c341425bb9f2c15da0bfeab170f46a82a33)), refs [#86](https://github.com/agrc/ad-vantage/issues/86)
+* implement keyboard shortcut for adding new rows ([5d44a6d](https://github.com/agrc/ad-vantage/commit/5d44a6d5a3483deda9cffce00d12bf36556b8100)), refs [#19](https://github.com/agrc/ad-vantage/issues/19)
+
+
+### Bug Fixes
+
+* add ma1 testing vantage host ([3f30a55](https://github.com/agrc/ad-vantage/commit/3f30a5581d4becf412c42ae179a18c3cc532904c))
+* only support vantage testing environment for pre-release version ([34faed6](https://github.com/agrc/ad-vantage/commit/34faed697fd66588ead2d777f4679ed6576307e6))
+
+
+### Dependencies
+
+* bump undici from 7.29.0 to 7.30.0 ([53290cd](https://github.com/agrc/ad-vantage/commit/53290cd33e601d6aec6d387064c4f856f88615ee))
+* **dev:** bump jsdom ([7797fdb](https://github.com/agrc/ad-vantage/commit/7797fdb7c16815d923936588cba3051bcef04ac9))
+* **dev:** bump the safe-dependencies group across 1 directory with 5 updates ([bccf94a](https://github.com/agrc/ad-vantage/commit/bccf94ac2e2d9ac534a59dbfffca73e709eedacd))
+
+## [1.4.0-rc.3](https://github.com/agrc/ad-vantage/compare/v1.4.0-rc.2...v1.4.0-rc.3) (2026-10-13)
+
+
+### Bug Fixes
+
+* only support vantage testing environment for pre-release version ([9d5c45e](https://github.com/agrc/ad-vantage/commit/9d5c45e7af13e47bd8221fdec6ce59482b2aa9b5))
+
+## [1.4.0-rc.2](https://github.com/agrc/ad-vantage/compare/v1.4.0-rc.1...v1.4.0-rc.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* add ma1 testing vantage host ([7991764](https://github.com/agrc/ad-vantage/commit/799176493d3a0f55757ef15e9b5d232cdf2c833d))
+
+## [1.4.0-rc.1](https://github.com/agrc/ad-vantage/compare/v1.3.15...v1.4.0-rc.1) (2026-10-02)
+
+
+### Features
+
+* add toggle for hiding the Scheduled Hours row on the Time Entry tab ([1208892](https://github.com/agrc/ad-vantage/commit/120889217d1d972f8672cff23b0b68120d7d5014))
+* auto-focus daily activity input when adding new row ([34fc843](https://github.com/agrc/ad-vantage/commit/34fc843c6aaac71fa1c4fe817518c7aabcf4d3f3)), refs [#18](https://github.com/agrc/ad-vantage/issues/18)
+* fix bug showing description column toggle on non-vantage pages ([7fa3883](https://github.com/agrc/ad-vantage/commit/7fa388356006b11176b2649548f0ae528898ce1d)), refs [#86](https://github.com/agrc/ad-vantage/issues/86)
+* implement keyboard shortcut for adding new rows ([7d8e1ca](https://github.com/agrc/ad-vantage/commit/7d8e1ca3733ce4d58189a67ad39dc77d86801979)), refs [#19](https://github.com/agrc/ad-vantage/issues/19)
+
 ## [1.3.15](https://github.com/agrc/ad-vantage/compare/v1.3.14...v1.3.15) (2026-09-23)
 
 

@@ -1,23 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DAILY_ACTIVITY_QA, DESCRIPTION_COL_KEY } from "../shared/constants";
-import type { ColumnPrefs, LookupDataRecord } from "../shared/storage";
+import type { ColumnPrefs, LookupDataRecord, RowPrefs } from "../shared/storage";
 
-const storage = vi.hoisted(() => ({
-  prefs: { hidden: [] as string[], frozen: [] as string[] },
-  lookup: null as LookupDataRecord | null,
-  getColumnPrefs: vi.fn(),
-  getLookupData: vi.fn(),
-  setColumnPrefs: vi.fn(),
-  resetExtensionData: vi.fn(),
-}));
+const storage = vi.hoisted(() => {
+  return {
+    prefs: { hidden: [] as string[], frozen: [] as string[] },
+    rowPrefs: { hidden: [] as string[] },
+    lookup: null as LookupDataRecord | null,
+    getColumnPrefs: vi.fn(),
+    getRowPrefs: vi.fn(),
+    getLookupData: vi.fn(),
+    setColumnPrefs: vi.fn(),
+    setRowPrefs: vi.fn(),
+    resetExtensionData: vi.fn(),
+  };
+});
 
 vi.mock("../shared/storage", async (importOriginal) => {
   const original = await importOriginal<typeof import("../shared/storage")>();
+
   return {
     ...original,
     getColumnPrefs: storage.getColumnPrefs,
+    getRowPrefs: storage.getRowPrefs,
     getLookupData: storage.getLookupData,
     setColumnPrefs: storage.setColumnPrefs,
+    setRowPrefs: storage.setRowPrefs,
     resetExtensionData: storage.resetExtensionData,
   };
 });
@@ -31,6 +39,8 @@ function renderPopupFixture() {
     <div id="lookup-summary"></div>
     <p id="empty-state"></p>
     <div id="column-list" hidden></div>
+    <p id="row-empty-state"></p>
+    <div id="row-list" hidden></div>
     <button id="reset-btn">Reset All Settings</button>
   `;
 }
@@ -39,6 +49,12 @@ function clonePrefs(): ColumnPrefs {
   return {
     hidden: [...storage.prefs.hidden],
     frozen: [...storage.prefs.frozen],
+  };
+}
+
+function cloneRowPrefs(): RowPrefs {
+  return {
+    hidden: [...storage.rowPrefs.hidden],
   };
 }
 
@@ -58,6 +74,7 @@ beforeEach(() => {
   vi.resetModules();
   renderPopupFixture();
   storage.prefs = { hidden: [], frozen: [DAILY_ACTIVITY_QA] };
+  storage.rowPrefs = { hidden: [] };
   storage.lookup = {
     entries: [["PRJ-1", "Monitor"]],
     entryCount: 1,
@@ -65,38 +82,75 @@ beforeEach(() => {
   };
   storage.getColumnPrefs
     .mockReset()
-    .mockImplementation(async () => clonePrefs());
+    .mockImplementation(async () => {
+      return clonePrefs();
+    });
+  storage.getRowPrefs
+    .mockReset()
+    .mockImplementation(async () => {
+      return cloneRowPrefs();
+    });
   storage.getLookupData
     .mockReset()
-    .mockImplementation(async () => storage.lookup);
+    .mockImplementation(async () => {
+      return storage.lookup;
+    });
   storage.setColumnPrefs
     .mockReset()
     .mockImplementation(async (prefs: ColumnPrefs) => {
       storage.prefs = { hidden: [...prefs.hidden], frozen: [...prefs.frozen] };
     });
+  storage.setRowPrefs
+    .mockReset()
+    .mockImplementation(async (prefs: RowPrefs) => {
+      storage.rowPrefs = { hidden: [...prefs.hidden] };
+    });
   storage.resetExtensionData.mockReset().mockImplementation(async () => {
     storage.lookup = null;
+    storage.rowPrefs = { hidden: [] };
   });
 
   vi.stubGlobal("chrome", {
     runtime: {
-      getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
-      getManifest: vi.fn(() => ({
-        name: "ad-vantage (Pre-release)",
-        version: "1.2.3",
-        icons: { "48": "icons/pre-release/icon48.png" },
-      })),
-      sendMessage: vi.fn((_message, callback) => callback({ ok: true })),
+      getURL: vi.fn((path: string) => {
+        return `chrome-extension://test/${path}`;
+      }),
+      getManifest: vi.fn(() => {
+        return {
+          name: "ad-vantage (Pre-release)",
+          version: "1.2.3",
+          icons: { "48": "icons/pre-release/icon48.png" },
+        };
+      }),
+      sendMessage: vi.fn((_message, callback) => {
+        return callback({ ok: true });
+      }),
       lastError: undefined,
     },
     tabs: {
-      query: vi.fn(async () => [{ id: 7 }]),
-      sendMessage: vi.fn(async () => ({
-        columns: [
-          { key: DAILY_ACTIVITY_QA, label: "Daily Activity" },
-          { key: "Mon", label: "Mon" },
-        ],
-      })),
+      query: vi.fn(async () => {
+        return [{ id: 7 }];
+      }),
+      sendMessage: vi.fn(async (_tabId, message: { type: string }) => {
+        if (message.type === "adv:get-columns") {
+          return {
+            columns: [
+              { key: DAILY_ACTIVITY_QA, label: "Daily Activity" },
+              { key: "Mon", label: "Mon" },
+            ],
+          };
+        }
+
+        if (message.type === "adv:get-rows") {
+          return {
+            rows: [
+              { label: "Scheduled Hours" },
+            ],
+          };
+        }
+
+        return {};
+      }),
     },
   });
 });
@@ -126,6 +180,45 @@ describe("popup integration", () => {
         (element) => element.textContent,
       ),
     ).toEqual(["Daily Activity", "Description", "Mon"]);
+  });
+
+  it("shows the column empty state when the active tab cannot be messaged", async () => {
+    const tabs = chrome.tabs as typeof chrome.tabs & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    tabs.sendMessage.mockRejectedValue(new Error("Could not connect to tab"));
+
+    await loadPopup();
+
+    expect(document.getElementById("empty-state")?.hidden).toBe(false);
+    expect(document.getElementById("column-list")?.hidden).toBe(true);
+    expect(document.querySelectorAll(".column-label")).toHaveLength(0);
+  });
+
+  it("does not add Description to grids without a Daily Activity column", async () => {
+    const tabs = chrome.tabs as typeof chrome.tabs & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    tabs.sendMessage.mockResolvedValue({
+      columns: [
+        { key: "START_DATE", label: "Pay Period Start Date" },
+        { key: "END_DATE", label: "Pay Period End Date" },
+        { key: "STATUS", label: "Status" },
+      ],
+    });
+
+    await loadPopup();
+
+    expect(
+      Array.from(document.querySelectorAll(".column-label")).map(
+        (element) => element.textContent,
+      ),
+    ).toEqual(["Pay Period Start Date", "Pay Period End Date", "Status"]);
+    expect(
+      document.querySelector(
+        `input[data-key="${DESCRIPTION_COL_KEY}"]`,
+      ),
+    ).toBeNull();
   });
 
   it("links production builds to the main changelog", async () => {
@@ -227,5 +320,88 @@ describe("popup integration", () => {
       (document.getElementById("sync-btn") as HTMLButtonElement).disabled,
     ).toBe(false);
     vi.useRealTimers();
+  });
+
+  it("renders detected rows and toggles row visibility", async () => {
+    await loadPopup();
+
+    const rowLabels = Array.from(document.querySelectorAll(".row-label")).map(
+      (element) => {
+        return element.textContent;
+      },
+    );
+    expect(rowLabels).toEqual(["Scheduled Hours"]);
+
+    const rowFreezeControls = document.querySelectorAll(
+      "#row-list input[data-type='freeze']",
+    );
+    expect(rowFreezeControls.length).toBe(0);
+
+    const visibleToggle = document.querySelector<HTMLInputElement>(
+      'input[data-type="row-visible"][data-label="Scheduled Hours"]',
+    )!;
+    expect(visibleToggle.checked).toBe(true);
+
+    visibleToggle.checked = false;
+    visibleToggle.dispatchEvent(new Event("change"));
+
+    await vi.waitFor(() => {
+      expect(storage.setRowPrefs).toHaveBeenCalledOnce();
+    });
+    expect(storage.rowPrefs.hidden).toEqual(["Scheduled Hours"]);
+    expect(
+      document.querySelector<HTMLInputElement>(
+        'input[data-type="row-visible"][data-label="Scheduled Hours"]',
+      )?.checked,
+    ).toBe(false);
+  });
+
+  it("shows row empty state when no rows are detected", async () => {
+    const tabs = chrome.tabs as typeof chrome.tabs & {
+      sendMessage: ReturnType<typeof vi.fn>;
+    };
+    tabs.sendMessage.mockImplementation(async (_tabId, message: { type: string }) => {
+      if (message.type === "adv:get-columns") {
+        return {
+          columns: [{ key: DAILY_ACTIVITY_QA, label: "Daily Activity" }],
+        };
+      }
+
+      if (message.type === "adv:get-rows") {
+        return {
+          rows: [],
+        };
+      }
+
+      return {};
+    });
+
+    await loadPopup();
+
+    expect(document.getElementById("row-empty-state")?.hidden).toBe(false);
+    expect(document.getElementById("row-list")?.hidden).toBe(true);
+  });
+
+  it("resets row preferences when reset all settings is clicked", async () => {
+    storage.rowPrefs = { hidden: ["Scheduled Hours"] };
+    await loadPopup();
+
+    const visibleToggleBefore = document.querySelector<HTMLInputElement>(
+      'input[data-type="row-visible"][data-label="Scheduled Hours"]',
+    )!;
+    expect(visibleToggleBefore.checked).toBe(false);
+
+    document.getElementById("reset-btn")?.click();
+
+    await vi.waitFor(() => {
+      expect(storage.resetExtensionData).toHaveBeenCalledOnce();
+    });
+
+    expect(storage.rowPrefs.hidden).toEqual([]);
+    expect(
+      document.querySelector<HTMLInputElement>(
+        'input[data-type="row-visible"][data-label="Scheduled Hours"]',
+      )?.checked,
+    ).toBe(true);
   });
 });

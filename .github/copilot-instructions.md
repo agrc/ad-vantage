@@ -40,6 +40,16 @@ Keep `src/content/index.ts` focused on loading state and orchestrating feature m
 
 Pass current preferences and lookup data into feature modules rather than duplicating storage listeners or module-level state. Preserve summary-row colspans, sticky-header behavior, modal exclusions, and the immediate-plus-animation-frame mutation pass unless live profiling supports a timing change.
 
+## Vantage Version Testing Skill
+
+Maintain [.agents/skills/vantage-version-testing/SKILL.md](.agents/skills/vantage-version-testing/SKILL.md) as the explicit live-regression test plan for new Vantage versions.
+
+- When adding a user-visible feature or changing extension behavior, add or revise the skill's corresponding test case in the same task. Include setup, the interaction to perform, observable pass criteria, and cleanup or safety requirements.
+- When changing pagination, update the 21-record and 101-record scenarios and their expected page-size transitions to match the implementation.
+- When removing or replacing a feature, remove or revise its obsolete live test instead of leaving a stale test instruction.
+- Keep the skill aligned with the README feature list, manifest-supported Vantage hosts, module ownership, and current UI selectors. Record live-browser limitations as not-testable rather than weakening expected behavior.
+- Continue to add focused unit tests for code changes; the live-test skill supplements, and does not replace, automated tests.
+
 ## README Maintenance
 
 When implementing a new user-visible feature, behavior change, workflow change, or setup change, update [README.md](README.md) in the same task unless the user explicitly says not to.

@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import { crx } from "@crxjs/vite-plugin";
 import manifest from "./manifest.json";
+import { getContentScriptsForBuild } from "./src/shared/content-scripts";
 
 export default defineConfig(({ command, mode }) => {
   const environment = loadEnv(mode, ".", "VITE_");
@@ -13,6 +14,12 @@ export default defineConfig(({ command, mode }) => {
   const extensionName = validateExtensionName(environment.VITE_EXTENSION_NAME);
   const extensionKey = environment.VITE_EXTENSION_KEY?.trim();
   const isPreReleaseBuild = mode === "pre-release";
+  const contentScriptBuildTarget =
+    mode === "development"
+      ? "development"
+      : isPreReleaseBuild
+        ? "pre-release"
+        : "production";
   const usesPreReleaseBranding = mode === "development" || isPreReleaseBuild;
   const extensionVersion = getExtensionVersion(manifest.version);
   const iconDirectory = usesPreReleaseBranding ? "icons/pre-release" : "icons";
@@ -25,6 +32,10 @@ export default defineConfig(({ command, mode }) => {
           name: extensionName,
           version: extensionVersion,
           key: extensionKey,
+          content_scripts: getContentScriptsForBuild(
+            manifest.content_scripts,
+            contentScriptBuildTarget,
+          ),
           icons: getIconPaths(iconDirectory),
           action: {
             ...manifest.action,
