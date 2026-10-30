@@ -112,6 +112,17 @@ describe("fetchTaskLookup", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("explains possible causes of forbidden task access without assuming the cause", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 403 }),
+    );
+
+    await expect(fetchTaskLookup()).rejects.toThrow(
+      "ServiceNow denied access to task data (403). You may not have access to any tasks yet; missing ServiceNow group membership is one possible cause. Ask your ServiceNow administrator to verify your access.",
+    );
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it("reports non-OK and malformed responses", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(null, { status: 503 }),

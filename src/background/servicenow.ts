@@ -91,6 +91,11 @@ async function fetchPage(
       }
       throw new Error("ServiceNow session expired. Fetch again to sign in.");
     }
+    if (response.status === 403) {
+      throw new Error(
+        "ServiceNow denied access to task data (403). You may not have access to any tasks yet; missing ServiceNow group membership is one possible cause. Ask your ServiceNow administrator to verify your access.",
+      );
+    }
     if (!response.ok) {
       throw new Error(`ServiceNow task fetch failed (${response.status}).`);
     }
