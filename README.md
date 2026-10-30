@@ -51,6 +51,8 @@ Use **Fetch from ServiceNow** in the popup to sign in and load current task desc
 
 The sync request times out after 45 seconds. If the request fails, times out, or the background process does not respond, the popup shows an error and lets you try again.
 
+If ServiceNow returns a 403, the popup suggests checking task access with your ServiceNow administrator; missing group membership is one possible cause, not a diagnosis.
+
 ### Keyboard Shortcut Not Working?
 
 If you had ad-vantage installed prior to the version that introduced the keyboard shortcut ([v1.3.16](https://github.com/agrc/ad-vantage/releases/tag/v1.3.16)), it will not work automatically. Chrome will not assign shortcuts to installed extensions during upgrades. You can assign it using the Chrome extension shortcuts setting page here: `chrome://extensions/shortcuts`
