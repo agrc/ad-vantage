@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.17](https://github.com/agrc/ad-vantage/compare/v1.3.16...v1.3.17) (2026-11-02)
+
+
+### Bug Fixes
+
+* allow exact Vite dependency release-age exceptions ([62a7858](https://github.com/agrc/ad-vantage/commit/62a7858cb1ca450110e43961c8727aa1c2bdb48c))
+* clarify ServiceNow 403 access errors ([650dc60](https://github.com/agrc/ad-vantage/commit/650dc6064ab19bd995771dc457290cad14ad3ad1))
+
+
+### Dependencies
+
+* bump undici from 8.11.0 to 8.12.3 ([17d6491](https://github.com/agrc/ad-vantage/commit/17d649124aef1ef7a4daa86b0c9d2efde8f100ef))
+* **dev:** bump vite from 8.3.0 to 8.3.3 ([3d26828](https://github.com/agrc/ad-vantage/commit/3d26828f4286d0bbc703e25f84788d1bbf686188))
+
 ## [1.3.16](https://github.com/agrc/ad-vantage/compare/v1.3.15...v1.3.16) (2026-10-19)
 
 
