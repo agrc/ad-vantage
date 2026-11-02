@@ -78,6 +78,8 @@ There is also a [DTS User Guide Doc](https://docs.google.com/document/d/1ymagre8
    pnpm install
    ```
 
+   Dependency installs enforce a strict seven-day minimum release age. The exact-version exceptions in `pnpm-workspace.yaml` allow the Vite update's Oxc 0.156.0 and Rolldown 1.2.16 dependencies; remove those exceptions once the versions clear the age window.
+
 2. **Configure the local OAuth client ID:**
 
    ```bash
